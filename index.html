@@ -1,0 +1,320 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel=stylesheet href="codemirror.css">
+    <script src="codemirror.js"></script>
+    <script src="xml.js"></script>
+    <script src="format_code.js"></script>
+    <script src="go.js"></script> 
+   <!-- <script src="https://unpkg.com/gojs/release/go-debug.js"></script>-->
+<!-- CSS Files -->
+<link type="text/css" href="base.css" rel="stylesheet" />
+
+
+
+<script>
+docReady(function() {
+    // DOM is loaded and ready for manipulation
+
+
+
+        function OozieNode() {  
+           this.node_id = "";  
+           this.previous_node = "";  
+           this.next_node = "";   
+           this.first_node = "";  
+           this.node_number = 0;
+            
+            this.getNodeID  = function() {  
+                  return this.node_id;  
+            };
+            this.getPreviousNode = function() {  
+                  return this.previous_node;  
+            };
+            this.getNextNode = function() {  
+                  return this.next_node;  
+            };
+            this.getIsFirstNode = function() {  
+                  return this.first_node;  
+            };
+        
+            this.getNodeNumber = function(){
+                return this.node_number;
+            };
+             
+            this.setNodeID = function(node_id){
+                this.node_id = node_id;
+            };
+            this.setPreviousNode = function(previous_node){
+                this.previous_node = previous_node;
+            };
+            this.setNextNode = function(next_node){
+                this.next_node = next_node;
+            };
+            this.setIsFirstNode = function(first_node){
+                this.first_node = first_node;
+            };
+            
+            this.setNodeNumber = function(node_number){
+                this.node_number = node_number;
+            };
+        
+            this.printNodeInfo = function(){
+                console.log(
+                    "getNodeID: " + this.getNodeID(),
+                    "\n getIsFirstNode: " + this.getIsFirstNode(),
+                    "\n getPreviousNode: " + this.getPreviousNode(),
+                    "\n getNextNode: " + this.getNextNode(),
+                    "\n getNodeNumber: " + this.getNodeNumber()
+                    );
+            };
+        } //----------------------------------------------------End class
+            
+            var node_list = [];
+            var flag_actions = true;
+            var allkeys = true;
+        
+            function parseXml(xmlStr) {    
+                return new DOMParser().parseFromString(xmlStr, "text/xml");
+            } 
+        //----------------------------------------------------
+        //init the DAG graph
+        //----------------------------------------------------
+            var $ = go.GraphObject.make; 
+              myDiagram = $(go.Diagram, "myDiagramDiv",  // create a Diagram for the DIV HTML element
+                {
+                  "undoManager.isEnabled": true  // enable undo & redo
+                });
+             
+              myDiagram.nodeTemplate =  // define a simple Node template
+                $(go.Node, "Auto",  // the Shape will go around the TextBlock
+                  $(go.Shape, "RoundedRectangle", { strokeWidth: 0, fill: "white" },  
+                    new go.Binding("fill", "color")),  // Shape.fill is bound to Node.data.color
+                  $(go.TextBlock,
+                    { margin: 8 },  // some room around the text 
+                    new go.Binding("text", "key")) // TextBlock.text is bound to Node.data.key
+                );
+        
+        //----------------------------------------------------
+        //Code Mirror
+        //----------------------------------------------------
+            document.getElementById("xml_text_editor").value = vkbeautify.xml(document.getElementById("xml_text_editor").value);
+            var updated_workdammit = CodeMirror.fromTextArea(document.getElementById("xml_text_editor"), {
+              mode: 'application/xml',
+              //theme: 'xq-dark',
+              lineNumbers: true,
+              lineWrapping: true,
+              readOnly: false,
+              //cursorBlinkRate: -1
+            });    
+
+           // console.log(updated_workdammit.getTextArea().value);
+        //----------------------------------------------------
+        //On key update text and graph
+        //----------------------------------------------------
+            document.body.onkeyup = function(event) {
+            //event.preventDefault();
+            if (allkeys) {
+                //reset node list:
+                var node_list = [];
+           // if (event.keyCode === 13) { //enter key only // alert("Enter key pressed");      
+                 updated_workdammit.save();
+                  var textArea = updated_workdammit.getValue();
+                  var arrayOfLines = textArea.split("\n"); // arrayOfLines is array where every element is string of one line
+                  var node_id = ["","","","","","","","","","","","","","",""]; //tmp while testing build:
+                  var count_node = 0;
+                  var first_time = false;
+                  var oozie_node = new OozieNode();
+                  var add_node_to_list = false;
+                  var last_node_name_was = "";
+                
+                  for(var i = 1;i < arrayOfLines.length;i++){
+                    if(add_node_to_list){
+                        node_list.push(oozie_node);
+                        add_node_to_list = false;
+                        console.log("Adding new node --------------------------");
+                        oozie_node.printNodeInfo();
+                        //zero out for next node
+                        oozie_node = new OozieNode();
+                    }
+        
+                    //xmlDoc = parser.parseFromString(arrayOfLines[i],"text/xml");
+                    //var action_node = xmlDoc.getElementsByTagName("action");
+                    var xml = parseXml(arrayOfLines[i]);
+                    var node_name_parsed = xml.documentElement.nodeName;
+                     //we found the first node
+                    if(node_name_parsed.includes("start")){
+                    var first_node_name = xml.documentElement.getAttribute("to");
+                    if(first_node_name){
+                      node_id[1] = first_node_name;
+                      count_node = 1;
+                      first_time = true;
+                      oozie_node.setNodeNumber(1);
+                      oozie_node.setIsFirstNode(true);
+                      oozie_node.setNodeID(first_node_name);
+                      oozie_node.setPreviousNode("first");
+                      continue;
+                    }
+                  }
+        
+                     //we found an action node
+                    if(node_name_parsed.includes("action")){
+                    var action_node_name = xml.documentElement.getAttribute("name");
+                    //first node check, let's check to make sure it's the same as the start node:
+                    if(action_node_name){
+                    if(node_id[1].includes(action_node_name) && first_time == true){       
+                      count_node = 1;
+                      first_time = false;
+                      last_node_name_was = action_node_name;
+                      add_node_to_list = true;
+                      continue;
+                    }
+                    //not first node:
+                    else{ 
+                      count_node++;
+                      node_id[count_node] = action_node_name;
+                      oozie_node.setIsFirstNode(false);
+                      oozie_node.setNodeID(action_node_name);
+                      oozie_node.setNextNode(action_node_name);
+                      oozie_node.setPreviousNode(last_node_name_was);
+                      oozie_node.setNodeNumber(count_node);
+                      add_node_to_list = true;
+                      last_node_name_was = action_node_name;
+                     // alert("adding node: " + node_id[count_node]);
+                      continue;
+                    }
+                   }
+                  }
+                 }
+                 updateGraph(node_list );
+            }
+            
+        }
+        
+        
+            function updateGraph(node_list){
+
+
+            
+             document.getElementById("myDiagramDiv").div = null;
+             myDiagram.div = null;
+             myDiagram = null;
+             go.Diagram.fromDiv = null;
+             myDiagram = $(go.Diagram, "myDiagramDiv",  // create a Diagram for the DIV HTML element
+                {
+                  "undoManager.isEnabled": true  // enable undo & redo
+                });
+              // define a simple Node template
+              myDiagram.nodeTemplate =
+                $(go.Node, "Auto",  // the Shape will go around the TextBlock
+                  $(go.Shape, "RoundedRectangle", { strokeWidth: 0, fill: "white" },  
+                    new go.Binding("fill", "color")),  // Shape.fill is bound to Node.data.color
+                  $(go.TextBlock,
+                    { margin: 8 },  // some room around the text
+                    
+                    new go.Binding("text", "key")) // TextBlock.text is bound to Node.data.key
+                );
+
+
+             
+                var model =  new go.TreeModel();
+                //add real data
+                for(let id = 1; id < node_list.length; id++){
+                    model.addNodeData({key: node_list[id].getNodeID(), parent: node_list[id].getPreviousNode(),  color: "lightblue"});
+                }
+                //console.log(model.nodeDataArray);
+                myDiagram.model = model;
+            }
+        });  
+
+
+
+
+
+
+
+   function docReady(fn) {
+    // see if DOM is already available
+    if (document.readyState === "complete" || document.readyState === "interactive") {
+        // call on next available tick
+        setTimeout(fn, 1);
+    } else {
+        document.addEventListener("DOMContentLoaded", fn);
+    }
+}   
+          </script>
+
+</head>
+
+
+
+
+
+<body">  
+
+
+
+    <!-----------FLOW CHART START------------------->
+    <div id="container">
+        <div id="left-container">
+            <!-----------XML EDITOR START------------------->
+            <textarea id="xml_text_editor">
+                <!---------------------------------------------->
+                <!--            START TYPING XML              -->
+                <!---------------------------------------------->
+                <start to="step_01_starting_email"/>
+                <action name="step_01_starting_email">
+                    <email
+                        xmlns="uri:oozie:email-action:0.2">
+                        <to>${primary_email}</to>
+                        <cc>${other_email}</cc>
+                        <subject>Run - Started</subject>
+                        <body>Hadoop File Run has Started</body>
+                    </email>
+                    <ok to="step_02_set_incoming_file_permissions"/>
+                    <error to="send_failmail"/>
+                </action>
+                <action name="step_02_set_incoming_file_permissions">
+                    <fs>
+                        <name-node>${nameNode}</name-node>
+                        <chmod path="${hdfs_ingest_path}/*" permissions="777" dir-files="false"></chmod>
+                    </fs>
+                    <ok to="step_03_truncate"/>
+                    <error to="send_failmail"/>
+                </action>
+                <action name="step_03_truncate">
+                    <hive
+                        xmlns="uri:oozie:hive-action:0.6">
+                        <job-tracker>${resourceManager}</job-tracker>
+                        <name-node>${nameNode}</name-node>
+                        <query>truncate table test.table</query>
+                    </hive>
+                    <ok to="step_04_extract_details"/>
+                    <error to="send_failmail"/>
+                </action>
+                <action name="step_04_extract_details">
+                    <hive
+                        xmlns="uri:oozie:hive-action:0.6">
+                        <job-tracker>${resourceManager}</job-tracker>
+                        <name-node>${nameNode}</name-node>
+                        <query>truncate table test.table</query>
+                    </hive>
+                    <ok to="end_of_run"/>
+                    <error to="send_failmail"/>
+                </action>
+            
+
+
+            </textarea>
+          
+          
+          </div>
+  
+    <div id="right-container">
+        <div id="myDiagramDiv" style="border: solid 1px black; width:900px; height:900px;"></div> 
+    </div>
+    <div id="log"></div>
+    </div>
+    </body>
+</body>
+</html>
