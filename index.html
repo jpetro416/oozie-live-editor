@@ -5,8 +5,8 @@
     <script src="codemirror.js"></script>
     <script src="xml.js"></script>
     <script src="format_code.js"></script>
-    <script src="go.js"></script> 
-   <!-- <script src="https://unpkg.com/gojs/release/go-debug.js"></script>-->
+     <script src="go.js"></script>  
+ <!--  DEBUG <script src="https://unpkg.com/gojs/release/go-debug.js"></script> -->
 <!-- CSS Files -->
 <link type="text/css" href="base.css" rel="stylesheet" />
 
@@ -15,9 +15,6 @@
 <script>
 docReady(function() {
     // DOM is loaded and ready for manipulation
-
-
-
         function OozieNode() {  
            this.node_id = "";  
            this.previous_node = "";  
@@ -114,11 +111,12 @@ docReady(function() {
         //----------------------------------------------------
             document.body.onkeyup = function(event) {
             //event.preventDefault();
-            if (allkeys) {
-                //reset node list:
-                var node_list = [];
-           // if (event.keyCode === 13) { //enter key only // alert("Enter key pressed");      
-                 updated_workdammit.save();
+            // if (event.keyCode === 13) { //enter key only // alert("Enter key pressed");      
+            if (allkeys) {  
+                  //reset node list and console output:
+                  var node_list = [];
+                  consoleCleanup();
+                  updated_workdammit.save();
                   var textArea = updated_workdammit.getValue();
                   var arrayOfLines = textArea.split("\n"); // arrayOfLines is array where every element is string of one line
                   var node_id = ["","","","","","","","","","","","","","",""]; //tmp while testing build:
@@ -193,9 +191,7 @@ docReady(function() {
         
         
             function updateGraph(node_list){
-
-
-            
+             var demo = false;
              document.getElementById("myDiagramDiv").div = null;
              myDiagram.div = null;
              myDiagram = null;
@@ -204,44 +200,89 @@ docReady(function() {
                 {
                   "undoManager.isEnabled": true  // enable undo & redo
                 });
-              // define a simple Node template
-              myDiagram.nodeTemplate =
+                   // define a simple Node template
+            myDiagram.nodeTemplate =
                 $(go.Node, "Auto",  // the Shape will go around the TextBlock
-                  $(go.Shape, "RoundedRectangle", { strokeWidth: 0, fill: "white" },  
-                    new go.Binding("fill", "color")),  // Shape.fill is bound to Node.data.color
-                  $(go.TextBlock,
-                    { margin: 8 },  // some room around the text
-                    
-                    new go.Binding("text", "key")) // TextBlock.text is bound to Node.data.key
+                $(go.Shape, "RoundedRectangle", { strokeWidth: 0, fill: "white" },
+                    // Shape.fill is bound to Node.data.color
+                    new go.Binding("fill", "color")),
+                $(go.TextBlock,
+                    { margin: 8, font: "bold 14px sans-serif", stroke: '#333' }, // Specify a margin to add some room around the text
+                    // TextBlock.text is bound to Node.data.key
+                    new go.Binding("text", "key"))
                 );
-
-
-             
-                var model =  new go.TreeModel();
-                //add real data
+                 // create the model data that will be represented by Nodes and Links
+                 if(demo){
+                 for(let id = 1; id < node_list.length; id++){
+                myDiagram.model = new go.GraphLinksModel(
+                    [
+                    { key: node_list[id].getNodeID(), color: randomDAGColor() },
+                    { key: node_list[id].getPreviousNode() , color: "orange" },
+                    { key: "Gamma", color: "lightgreen" },
+                    { key: "Delta", color: "pink" }
+                    ],
+                    [
+                    { from: node_list[id].getNodeID(), to: node_list[id].getPreviousNode() },
+                    { from: node_list[id].getNodeID(), to: "Gamma" },
+                    { from: node_list[id].getPreviousNode() , to: node_list[id].getPreviousNode() },
+                    { from: "Gamma", to: "Delta" },
+                    { from: "Delta", to:  node_list[id].getNodeID() }
+                    ]);
+                 }
+                }else{ 
+                var model = new go.GraphLinksModel();
+                //Add data
                 for(let id = 1; id < node_list.length; id++){
-                    model.addNodeData({key: node_list[id].getNodeID(), parent: node_list[id].getPreviousNode(),  color: "lightblue"});
+                    //model.addNodeData({key: node_list[id].getNodeID(), parent: node_list[id].getPreviousNode(),  color: "lightblue"});
+                    model.addNodeData( { key: node_list[id].getNodeID(), color: randomDAGColor() } );
+                    model.addLinkData( { from: node_list[id].getPreviousNode(), to: node_list[id].getNodeID() } );
                 }
                 //console.log(model.nodeDataArray);
                 myDiagram.model = model;
+                }
             }
-        });  
+        });   
+
+
+
+        function randomDAGColor () {
+            var rando_num = Math.floor(Math.random() * 4) + 1
+            if(rando_num == 1){
+                return "lightblue";
+            }else if(rando_num == 2){
+                return "lightgreen";
+            }else if(rando_num == 3){
+                return "orange";
+            }else{
+                return "pink";
+            }
+        }
+  
 
 
 
 
-
-
-
-   function docReady(fn) {
-    // see if DOM is already available
-    if (document.readyState === "complete" || document.readyState === "interactive") {
-        // call on next available tick
-        setTimeout(fn, 1);
-    } else {
-        document.addEventListener("DOMContentLoaded", fn);
-    }
-}   
+        function docReady(fn) {
+            // see if DOM is already available
+            if (document.readyState === "complete" || document.readyState === "interactive") {
+                // call on next available tick
+                setTimeout(fn, 1);
+            } else {
+                document.addEventListener("DOMContentLoaded", fn);
+            }
+        }
+            function consoleCleanup(){
+            if(console._commandLineAPI && console._commandLineAPI.clear){
+                console._commandLineAPI.clear();//clear in some safari versions
+            }else if(console._inspectorCommandLineAPI && console._inspectorCommandLineAPI.clear){
+                console._inspectorCommandLineAPI.clear();//clear in some chrome versions
+            }else if(console.clear){
+                console.clear();//clear in other chrome versions (maybe more browsers?)
+            }else{
+                console.log(Array(100).join("\n"));//print 100 newlines if nothing else works
+            }
+        }
+   
           </script>
 
 </head>
@@ -299,7 +340,21 @@ docReady(function() {
                         <name-node>${nameNode}</name-node>
                         <query>truncate table test.table</query>
                     </hive>
-                    <ok to="end_of_run"/>
+                    <ok to="step_05_truncate"/>
+                    <error to="send_failmail"/>
+                </action>
+                <action name="step_05_truncate">
+                    <hive
+                        xmlns="uri:oozie:hive-action:0.6">
+                        <job-tracker>${resourceManager}</job-tracker>
+                        <name-node>${nameNode}</name-node>
+                        <query>truncate table test.table</query>
+                    </hive>
+                    <ok to="end_node"/>
+                    <error to="send_failmail"/>
+                </action>
+                <action name="end_node">
+                    <ok to="none"/>
                     <error to="send_failmail"/>
                 </action>
             
