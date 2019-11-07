@@ -21,7 +21,7 @@ docReady(function() {
            this.next_node = "";   
            this.first_node = false;  
            this.node_number = 0;
-           this.error_node = "";
+           this.error_node = null;
            this.primary_error_node = false;
             
             this.getNodeID  = function() {  
@@ -181,20 +181,20 @@ docReady(function() {
                     if(node_name_parsed.includes("start")){
                         first_node_name = xml.documentElement.getAttribute("to");
                     if(first_node_name){
-                      //count_node = 1;
                       first_time = true;
-                    //   oozie_node.setNodeNumber(0);
-                    //   oozie_node.setIsFirstNode(false);
-                    //   oozie_node.setNodeID(first_node_name);
-                    //   oozie_node.setPreviousNode("first");
                       continue;
                     }
                   }
+
+                    //actual error node being referenced by other nodes
+                    if(oozie_node.getErrorNode() != null && arrayOfLines[i].includes("action name=")  && arrayOfLines[i].includes(oozie_node.getErrorNode())){
+                        oozie_node.setPrimaryErrorNode(true);
+                       // alert("Comparing: "  + oozie_node.getErrorNode() + " |  to: " +arrayOfLines[i]);
+                    }
         
-                     //we found an action node
-                    if(node_name_parsed.includes("action")){
+                    if(node_name_parsed.includes("action")){  //we found an action node
                     var action_node_name = xml.documentElement.getAttribute("name");
-                   // alertOrConsole(error_node, true);
+                  
                     if(action_node_name){
                     //first node check, let's check to make sure it's the same as the start node:
                     if(oozie_node.getNodeID().includes(first_node_name) && first_time == true){  
@@ -228,6 +228,8 @@ docReady(function() {
         
         
             function updateGraph(node_list){
+
+
              document.getElementById("myDiagramDiv").div = null;
              myDiagram.div = null;
              myDiagram = null;
@@ -237,9 +239,13 @@ docReady(function() {
                   "undoManager.isEnabled": true  // enable undo & redo
                 });
                   
-            myDiagram.nodeTemplate =  // define a simple Node template
+                myDiagram.nodeTemplate =  // define a simple Node template       
+            
+       
+            
                 $(go.Node, "Auto",  // the Shape will go around the TextBlock
-                $(go.Shape, "RoundedRectangle", { strokeWidth: 0, fill: "white" },
+                    new go.Binding("location", "loc"),  // get the Node.location from the data.loc value
+                $(go.Shape, "RoundedRectangle", { strokeWidth: 1, fill: "white" },
                     // Shape.fill is bound to Node.data.color
                     new go.Binding("fill", "color")),
                 $(go.TextBlock,
@@ -249,19 +255,35 @@ docReady(function() {
                 );
                  // create the model data that will be represented by Nodes and Links
                  //tree test:
-                myDiagram.layout = $(go.TreeLayout, { angle: 90 });
+                myDiagram.layout = $(go.TreeLayout, { 
+                    angle: 90 ,
+                    // nodeSpacing: 80,
+                    // arrangement: go.TreeLayout.ArrangementFixedRoutes,
+                    // alignment: go.TreeLayout.AlignmentCenterSubtrees,
+                    // layerSpacing: 110
+
+                    
+                    });
+
+             
                 
                 var model = new go.GraphLinksModel();
-                //Add data
+                //Add normal path data
                 for(let id = 0; id < node_list.length; id++){
                     if(node_list[id].isPrimaryErrorNode()){
                     model.addNodeData( { key: node_list[id].getNodeID(), color: "red" } );
                     model.addLinkData( { from: "", to: "" } ); 
                     }else{
-                    model.addNodeData( { key: node_list[id].getNodeID(), color: randomDAGColor() } );
+                    model.addNodeData( { key: node_list[id].getNodeID(), color: randomDAGColor()} );
                     model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
+                    if(node_list[id].getErrorNode()!=null){
+                    model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getErrorNode() } );  //add error node link
                     }
+                 }
+                 
                 }
+                
+
                 //console.log(model.nodeDataArray);
                 myDiagram.model = model;
                 
@@ -277,7 +299,12 @@ docReady(function() {
 
         // }
 
-
+                function showPoint(loc) {
+            var docloc = diagram.transformDocToView(loc);
+            var elt = document.getElementById("Message1");
+            elt.textContent = "Selected node location,\ndocument coordinates: " + loc.x.toFixed(2) + " " + loc.y.toFixed(2) +
+                            "\nview coordinates: " + docloc.x.toFixed(2) + " " + docloc.y.toFixed(2);
+        }
         function randomDAGColor () {
             var rando_num = Math.floor(Math.random() * 6) + 1
             if(rando_num == 1){
@@ -293,6 +320,10 @@ docReady(function() {
             }else{
                 return "lightblue";
             }
+        }
+
+        function randomIntFromInterval(min, max) { // min and max included 
+            return Math.floor(Math.random() * (max - min + 1) + min);
         }
 
         function alertOrConsole(node, flag){
@@ -349,23 +380,47 @@ docReady(function() {
                 <!---------------------------------------------->
                 <!--            START TYPING XML              -->
                 <!---------------------------------------------->
-                <start to="step_01_starting_email"/>
-                <action name="step_01_starting_email">
-                    <ok to="step_02_set_incoming_file_permissions"/>
-                    <error to="send_failmail"/>
+                <start to="step_01"/>
+                <action name="step_01">
+                    <ok to="step_02"/>
+                    <error to="fail_node"/>aa
                 </action>
-                <action name="step_02_set_incoming_file_permissions">
+                <action name="step_02">
                     <fs>
                         <name-node>${nameNode}</name-node>
                         <chmod path="${hdfs_ingest_path}/*" permissions="777" dir-files="false"></chmod>
                     </fs>
-                    <ok to="step_03_truncate"/>
-                    <error to="send_failmail"/>
+                    <ok to="step_03"/>
+                    <error to="fail_node"/>
                 </action>
-                <action name="step_03_truncate">
-                    <ok to="step_04_extract_details"/>
-                    <error to="send_failmail"/>
+                <action name="step_03">
+                    <ok to="step_04"/>
+                    <error to="fail_node"/>
                 </action>
+                <action name="fail_node">
+                    <ok to="kill"/>
+                    <error to="fail_node"/>
+                </action>
+                <action name="step_04">
+                    <ok to="step_05"/>
+                    <error to="fail_node"/>
+                </action>
+                <action name="step_05">
+                    <ok to="end"/>
+                    <error to="fail_node"/>
+                </action>
+                <action name="end">
+                    <ok to="kill"/>
+                    <error to="fail_node"/>
+                </action>
+                              
+                
+                <action name="kill">
+                    <ok to="kill"/>
+                    <error to="fail_node"/>
+                </action>
+                                
+                
               
                 
 
