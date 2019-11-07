@@ -23,6 +23,8 @@ docReady(function() {
            this.node_number = 0;
            this.error_node = null;
            this.primary_error_node = false;
+           this.decision_node = false;
+           this.decision_default_next_node = "";   
             
             this.getNodeID  = function() {  
                   return this.node_id;  
@@ -48,6 +50,15 @@ docReady(function() {
             this.isPrimaryErrorNode = function(){
                 return this.primary_error_node;
             };
+
+            this.isDecisionNode = function(){
+                return this.decision_node;
+            };
+
+            this.getDecisionDefaultNextNode = function(){
+                return this.decision_default_next_node;
+            };
+            
              
             this.setNodeID = function(node_id){
                 this.node_id = node_id;
@@ -73,6 +84,15 @@ docReady(function() {
             this.setPrimaryErrorNode = function(primary_error_node){
                 this.primary_error_node = primary_error_node;
             };
+
+            this.setDecisionNode = function(decision_node){
+                this.decision_node = decision_node;
+            };
+            this.setDecisionDefaultNextNode = function(decision_default_next_node){
+                this.decision_default_next_node = decision_default_next_node;
+            };
+
+            
         
             this.printNodeInfo = function(){
                 console.log(
@@ -82,7 +102,9 @@ docReady(function() {
                     "\n getNextNode: " + this.getNextNode(),
                     "\n getNodeNumber: " + this.getNodeNumber(),
                     "\n getErrorNode: " + this.getErrorNode(),
-                    "\n isPrimaryErrorNode: " + this.isPrimaryErrorNode()
+                    "\n isPrimaryErrorNode: " + this.isPrimaryErrorNode(),
+                    "\n isDecisionNode: " + this.isDecisionNode(),
+                    "\n getDecisionDefaultNextNode: " + this.getDecisionDefaultNextNode()
                     );
             };
         } //----------------------------------------------------End class
@@ -146,7 +168,8 @@ docReady(function() {
                   var last_node_name_was = "";
                   var first_node_name;
                   var end_node_found = false;
-                
+                  var decision_node_fully_initialized = false;
+
                   for(var i = 1;i < arrayOfLines.length;i++){
                     //get lines
                     var xml = parseXml(arrayOfLines[i]);
@@ -154,6 +177,22 @@ docReady(function() {
                     if(node_name_parsed.includes("html") || node_name_parsed.includes("body") || node_name_parsed.includes("fs")){continue;} //skip regular DOM elements
                    // alertOrConsole(node_name_parsed,false);
 
+                    //check for decision node
+                    if(node_name_parsed.includes("decision")){
+                        oozie_node.setDecisionNode(true);
+                        oozie_node.setNodeID(xml.documentElement.getAttribute("name"));
+                    }
+
+                    if(oozie_node.isDecisionNode() && decision_node_fully_initialized == false){
+                        //todo: unlimited decision nodes array
+                        if(arrayOfLines[i].includes("case to=")){ //decision 1
+                            oozie_node.setNextNode(xml.documentElement.getAttribute("to"));
+                        }
+                        if(arrayOfLines[i].includes("default to=")){ //default decision
+                            oozie_node.setDecisionDefaultNextNode(xml.documentElement.getAttribute("to"));
+                            decision_node_fully_initialized = true;
+                        }
+                    }
 
                     //check for error node
                     if(node_name_parsed.includes("error")){
@@ -167,7 +206,15 @@ docReady(function() {
                         alertOrConsole(xml.documentElement.getAttribute("to"));
                     }
 
-                    if(add_node_to_list && end_node_found){
+                    if(add_node_to_list && end_node_found && oozie_node.isDecisionNode() == false){
+                        node_list.push(oozie_node);
+                        console.log("Adding new node --------------------------");
+                        oozie_node.printNodeInfo();
+                        oozie_node = new OozieNode(); //zero out for next node
+                        add_node_to_list = false; //reset flag
+                        end_node_found = false; //reset flag
+                    }else if(oozie_node.isDecisionNode() && decision_node_fully_initialized){
+
                         node_list.push(oozie_node);
                         console.log("Adding new node --------------------------");
                         oozie_node.printNodeInfo();
@@ -221,7 +268,6 @@ docReady(function() {
                   }
                  }
                  updateGraph(node_list);
-                 //displayLinkedNodes(node_list);
             }
             
         }
@@ -230,11 +276,11 @@ docReady(function() {
             function updateGraph(node_list){
 
 
-             document.getElementById("myDiagramDiv").div = null;
-             myDiagram.div = null;
-             myDiagram = null;
-             go.Diagram.fromDiv = null;
-             myDiagram = $(go.Diagram, "myDiagramDiv",  // create a Diagram for the DIV HTML element
+                document.getElementById("myDiagramDiv").div = null;
+                myDiagram.div = null;
+                myDiagram = null;
+                go.Diagram.fromDiv = null;
+                myDiagram = $(go.Diagram, "myDiagramDiv",  // create a Diagram for the DIV HTML element
                 {
                   "undoManager.isEnabled": true  // enable undo & redo
                 });
@@ -270,13 +316,17 @@ docReady(function() {
                 var model = new go.GraphLinksModel();
                 //Add normal path data
                 for(let id = 0; id < node_list.length; id++){
-                    if(node_list[id].isPrimaryErrorNode()){
+                    if(node_list[id].isPrimaryErrorNode()){ //add error node
                     model.addNodeData( { key: node_list[id].getNodeID(), color: "red" } );
                     model.addLinkData( { from: "", to: "" } ); 
-                    }else{
+                    }else if(node_list[id].isDecisionNode()){//add decision node
                     model.addNodeData( { key: node_list[id].getNodeID(), color: randomDAGColor()} );
                     model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
-                    if(node_list[id].getErrorNode()!=null){
+                    model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getDecisionDefaultNextNode() } );
+                    }else{//add normal node
+                    model.addNodeData( { key: node_list[id].getNodeID(), color: randomDAGColor()} );
+                    model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
+                    if(node_list[id].getErrorNode()!=null){ //add normal node error link node
                     model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getErrorNode() } );  //add error node link
                     }
                  }
@@ -380,6 +430,63 @@ docReady(function() {
                 <!---------------------------------------------->
                 <!--            START TYPING XML              -->
                 <!---------------------------------------------->
+                <workflow-app name="Decision Check"
+                xmlns="uri:oozie:workflow:0.5">
+                <start to="curl_ambari"/>
+                <decision name="decision_1">
+                    <switch>
+                        <case to="website_up">${(wf:actionData('curl_website')['website_status'] == "1")}</case>
+                        <default to="website_down"/>
+                    </switch>
+                </decision>
+                <action name="curl_website">
+                    <shell
+                        xmlns="uri:oozie:shell-action:0.3">
+                        <job-tracker>${resourceManager}</job-tracker>
+                        <name-node>${nameNode}</name-node>
+                        <exec>bash</exec>
+                        <argument>-c</argument>
+                        <argument>echo website_status=$(curl -s -i --insecure www.google.com | grep -c 302)</argument>
+                        <capture-output></capture-output>
+                    </shell>
+                    <ok to="decision_1"/>
+                    <error to="kill"/>
+                </action>
+                <action name="website_down">
+                    <email
+                        xmlns="uri:oozie:email-action:0.2">
+               
+                    </email>
+                    <ok to="end"/>
+                    <error to="kill"/>
+                </action>
+                <action name="website_up">
+                    <email
+                        xmlns="uri:oozie:email-action:0.2">
+                  
+                    </email>
+                    <ok to="end"/>
+                    <error to="kill"/>
+                </action>
+                <kill name="kill">
+                    <message>${wf:errorMessage(wf:lastErrorNode())}</message>
+                </kill>
+                <end name="end"/>
+            </workflow-app>
+            </textarea>
+          </div>
+  
+    <div id="right-container">
+        <div id="myDiagramDiv" style="border: solid 1px black; width:900px; height:900px;"></div> 
+    </div>
+    <div id="log"></div>
+    </div>
+    </body>
+</body>
+
+
+
+                <!-- TEST Demo Data
                 <start to="step_01"/>
                 <action name="step_01">
                     <ok to="step_02"/>
@@ -421,19 +528,5 @@ docReady(function() {
                 </action>
                                 
                 
-              
-                
-
-            </textarea>
-          
-          
-          </div>
-  
-    <div id="right-container">
-        <div id="myDiagramDiv" style="border: solid 1px black; width:900px; height:900px;"></div> 
-    </div>
-    <div id="log"></div>
-    </div>
-    </body>
-</body>
+            -->
 </html>
