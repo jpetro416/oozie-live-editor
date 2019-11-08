@@ -186,7 +186,6 @@ docReady(function() {
 
                     if(oozie_node.isDecisionNode() && decision_node_fully_initialized == false){
                         if(arrayOfLines[i].includes("tbl_drop_hive")){
-                       alertOrConsole(arrayOfLines[i], true)
                    }
                         //todo: unlimited decision nodes array
                         if(arrayOfLines[i].includes("case to=")){ //decision 1
@@ -291,7 +290,7 @@ docReady(function() {
                   
                 myDiagram.nodeTemplate =  // define a simple Node template       
             
-       
+        
             
                 $(go.Node, "Auto",  // the Shape will go around the TextBlock
                     new go.Binding("location", "loc"),  // get the Node.location from the data.loc value
@@ -311,7 +310,7 @@ docReady(function() {
                     // arrangement: go.TreeLayout.ArrangementFixedRoutes,
                     // alignment: go.TreeLayout.AlignmentCenterSubtrees,
                     // layerSpacing: 110
-
+ 
                     
                     });
 
@@ -416,14 +415,22 @@ docReady(function() {
    
           </script>
 
+
+
+
 </head>
 
 
 
-
+ 
 
 <body">  
-
+    <div class="topnav">
+        <a class="active" href="#Editor">Editor</a>
+        <a href="#Export">Export</a>
+        <a href="#demo">Demo</a>
+        <a href="#about">About</a>
+      </div>
 
 
     <!-----------FLOW CHART START------------------->
