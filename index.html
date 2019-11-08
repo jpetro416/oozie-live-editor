@@ -207,8 +207,6 @@ docReady(function() {
                     //check for next node
                     if(node_name_parsed.includes("ok")){
                         oozie_node.setNextNode(xml.documentElement.getAttribute("to"));
-                      
-                        alertOrConsole(xml.documentElement.getAttribute("to"));
                     }
 
                     if(add_node_to_list && end_node_found && oozie_node.isDecisionNode() == false){
