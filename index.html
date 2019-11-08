@@ -13,6 +13,11 @@
 
 
 <script>
+//Global
+var node_list = [];
+var flag_actions = true;
+var allkeys = true;
+var updated_copy_of_text_area = "";
 docReady(function() {
     // DOM is loaded and ready for manipulation
         function OozieNode() {  
@@ -96,7 +101,7 @@ docReady(function() {
         
             this.printNodeInfo = function(){
                 console.log(
-                       "getNodeID: " + this.getNodeID(),
+                       " getNodeID: " + this.getNodeID(),
                     "\n getIsFirstNode: " + this.getIsFirstNode(),
                     "\n getPreviousNode: " + this.getPreviousNode(),
                     "\n getNextNode: " + this.getNextNode(),
@@ -108,14 +113,7 @@ docReady(function() {
                     );
             };
         } //----------------------------------------------------End class
-            
-            var node_list = [];
-            var flag_actions = true;
-            var allkeys = true;
-        
-            function parseXml(xmlStr) {    
-                return new DOMParser().parseFromString(xmlStr, "text/xml");
-            } 
+
         //----------------------------------------------------
         //init the DAG graph
         //----------------------------------------------------
@@ -146,7 +144,8 @@ docReady(function() {
               readOnly: false,
               //cursorBlinkRate: -1
             });    
-
+            //save text before edits
+            updated_copy_of_text_area = updated_workdammit.getValue();
            // console.log(updated_workdammit.getTextArea().value);
         //----------------------------------------------------
         //On key update text and graph
@@ -160,6 +159,7 @@ docReady(function() {
                   consoleCleanup();
                   updated_workdammit.save();
                   var textArea = updated_workdammit.getValue();
+                  updated_copy_of_text_area = textArea;
                   var arrayOfLines = textArea.split("\n"); // arrayOfLines is array where every element is string of one line
                   var count_node = 0;
                   var first_time = false;
@@ -169,6 +169,8 @@ docReady(function() {
                   var first_node_name;
                   var end_node_found = false;
                   var decision_node_fully_initialized = false;
+                  var last_error_node = null;
+                  var all_error_nodes_foud = [];
 
                   for(var i = 1;i < arrayOfLines.length;i++){
                     //get lines
@@ -198,11 +200,13 @@ docReady(function() {
                     }
 
                     //check for error node (should always be the end node)
-                    if(node_name_parsed.includes("error")){
-                        oozie_node.setErrorNode(xml.documentElement.getAttribute("to"));
+                    if(node_name_parsed.includes("error")){ 
+                        var error_node = xml.documentElement.getAttribute("to");
+                        oozie_node.setErrorNode(error_node);
+                        all_error_nodes_foud.push(error_node);
                         end_node_found = true;
                     }
-
+              
                     //check for next node
                     if(node_name_parsed.includes("ok")){
                         oozie_node.setNextNode(xml.documentElement.getAttribute("to"));
@@ -233,14 +237,36 @@ docReady(function() {
                     if(first_node_name){
                       first_time = true;
                       continue;
-                    }
+                    } 
                   }
+ 
+                    //TODO: PRIMARY ERROR NODES!
+                    //actual error node being referenced by other nodes
+                    //  if(oozie_node.getErrorNode() != null && arrayOfLines[i].includes("action name=")  && arrayOfLines[i].includes(oozie_node.getErrorNode())){
+                    //     oozie_node.setPrimaryErrorNode(true);
+                    //    // alert("Comparing: "  + oozie_node.getErrorNode() + " |  to: " +arrayOfLines[i]);
+                    // }
 
                     //actual error node being referenced by other nodes
-                    if(oozie_node.getErrorNode() != null && arrayOfLines[i].includes("action name=")  && arrayOfLines[i].includes(oozie_node.getErrorNode())){
-                        oozie_node.setPrimaryErrorNode(true);
-                       // alert("Comparing: "  + oozie_node.getErrorNode() + " |  to: " +arrayOfLines[i]);
-                    }
+                //     if(arrayOfLines[i].includes("action name=")){
+                //     for(let err_id = 0; err_id < all_error_nodes_foud.length; err_id++){ 
+                //         if(arrayOfLines[i].includes(all_error_nodes_foud[err_id]) && all_error_nodes_foud[err_id].includes("kill") == false){
+                //         oozie_node.setPrimaryErrorNode(true);
+                //         //alert("Comparing: "  + oozie_node.getErrorNode() + " |  to: " +arrayOfLines[i]);
+                //     }
+                //     }
+                // }
+            
+
+                    //check nodes for error node 
+                    // if(arrayOfLines[i].includes("action name=") && node_list[id].getErrorNode()){
+                    //     for(let id = 0; id < node_list.length; id++){
+                    //       //  alert("Comparing: "  + oozie_node.getErrorNode() + " |  to: " +arrayOfLines[i]);
+                    //     if(arrayOfLines[i].includes(node_list[id].getErrorNode())){ //add error node
+                    //        // oozie_node.setPrimaryErrorNode(true);
+                    //     }
+                    //  }
+                    // } 
         
                     if(node_name_parsed.includes("action")){  //we found an action node
                     var action_node_name = xml.documentElement.getAttribute("name");
@@ -274,10 +300,13 @@ docReady(function() {
             }
             
         }
-        
+
+            //XML Parser
+            function parseXml(xmlStr) {    
+                return new DOMParser().parseFromString(xmlStr, "text/xml");
+            } 
         
             function updateGraph(node_list){
-
 
                 document.getElementById("myDiagramDiv").div = null;
                 myDiagram.div = null;
@@ -288,10 +317,7 @@ docReady(function() {
                   "undoManager.isEnabled": true  // enable undo & redo
                 });
                   
-                myDiagram.nodeTemplate =  // define a simple Node template       
-            
-        
-            
+                myDiagram.nodeTemplate =  // define a simple Node template
                 $(go.Node, "Auto",  // the Shape will go around the TextBlock
                     new go.Binding("location", "loc"),  // get the Node.location from the data.loc value
                 $(go.Shape, "RoundedRectangle", { strokeWidth: 1, fill: "white" },
@@ -302,20 +328,17 @@ docReady(function() {
                     // TextBlock.text is bound to Node.data.key
                     new go.Binding("text", "key"))
                 );
-                 // create the model data that will be represented by Nodes and Links
-                 //tree test:
+                 
+                //create the model data that will be represented by Nodes and Links
+                //tree test:
                 myDiagram.layout = $(go.TreeLayout, { 
                     angle: 90 ,
                     // nodeSpacing: 80,
                     // arrangement: go.TreeLayout.ArrangementFixedRoutes,
                     // alignment: go.TreeLayout.AlignmentCenterSubtrees,
                     // layerSpacing: 110
- 
-                    
-                    });
+                });
 
-             
-                
                 var model = new go.GraphLinksModel();
                 //Add normal path data
                 for(let id = 0; id < node_list.length; id++){
@@ -327,37 +350,34 @@ docReady(function() {
                     model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
                     model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getDecisionDefaultNextNode() } );
                     }else{//add normal node
+                    if(node_list[id].getNodeID().includes("kill") || node_list[id].getNodeID().includes("fail") ){ //quick and dirty kill and failure node highlight TODO: REAL ID kill/fail node
+                        model.addNodeData( { key: node_list[id].getNodeID(), color: "red"} );
+                        model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
+                    }else{
                     model.addNodeData( { key: node_list[id].getNodeID(), color: randomDAGColor()} );
                     model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
+                    }
                     if(node_list[id].getErrorNode()!=null){ //add normal node error link node
                     model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getErrorNode() } );  //add error node link
                     }
                  }
                  
                 }
-                
-
-                //console.log(model.nodeDataArray);
+                //alertOrConsole(model.nodeDataArray,false);
                 myDiagram.model = model;
                 
             }
         });   
 
-
-
-        // function displayLinkedNodes(node_list){
-        //     for(let id = 0; id < node_list.length; id++){
-        //         alertOrConsole("" node_list[id].getNodeID() + "" + node_list[id].getNextNode() , false);
-        //     }
-
-        // }
-
-                function showPoint(loc) {
+        //location points TODO
+        function showPoint(loc) {
             var docloc = diagram.transformDocToView(loc);
             var elt = document.getElementById("Message1");
             elt.textContent = "Selected node location,\ndocument coordinates: " + loc.x.toFixed(2) + " " + loc.y.toFixed(2) +
                             "\nview coordinates: " + docloc.x.toFixed(2) + " " + docloc.y.toFixed(2);
         }
+
+        //random color generator
         function randomDAGColor () {
             var rando_num = Math.floor(Math.random() * 6) + 1
             if(rando_num == 1){
@@ -375,10 +395,12 @@ docReady(function() {
             }
         }
 
+        //random number generator
         function randomIntFromInterval(min, max) { // min and max included 
             return Math.floor(Math.random() * (max - min + 1) + min);
         }
 
+        //logger
         function alertOrConsole(node, flag){
         if(flag){
             alert(node);
@@ -386,21 +408,39 @@ docReady(function() {
             console.log("----------------");
             console.log(node);
         }
-    }
+        }
   
+        //save to file
+        function exportXMLToFile(){
+            var pom = document.createElement('a');
+            pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(updated_copy_of_text_area));
+            pom.setAttribute('download', "workflow.xml");
 
-
-
-
-        function docReady(fn) {
-            // see if DOM is already available
-            if (document.readyState === "complete" || document.readyState === "interactive") {
-                // call on next available tick
-                setTimeout(fn, 1);
-            } else {
-                document.addEventListener("DOMContentLoaded", fn);
+            if (document.createEvent) {
+                var event = document.createEvent('MouseEvents');
+                event.initEvent('click', true, true);
+                pom.dispatchEvent(event);
+            }
+            else {
+                pom.click();
             }
         }
+
+            //about
+            function aboutOLE(){
+                alert("Version: 1.0.7\nSoftware Created by: Joseph Petro\nPlease visit gojs.net to purchase a license for Go.JS");
+            }
+
+            function docReady(fn) {
+                // see if DOM is already available
+                if (document.readyState === "complete" || document.readyState === "interactive") {
+                    // call on next available tick
+                    setTimeout(fn, 1);
+                } else {
+                    document.addEventListener("DOMContentLoaded", fn);
+                }
+            }
+
             function consoleCleanup(){
             if(console._commandLineAPI && console._commandLineAPI.clear){
                 console._commandLineAPI.clear();//clear in some safari versions
@@ -412,12 +452,7 @@ docReady(function() {
                 console.log(Array(100).join("\n"));//print 100 newlines if nothing else works
             }
         }
-   
           </script>
-
-
-
-
 </head>
 
 
@@ -427,9 +462,8 @@ docReady(function() {
 <body">  
     <div class="topnav">
         <a class="active" href="#Editor">Editor</a>
-        <a href="#Export">Export</a>
-        <a href="#demo">Demo</a>
-        <a href="#about">About</a>
+        <a href="#Export" onclick="exportXMLToFile()">Export Workflow</a>
+        <a href="#about"  onclick="aboutOLE()">About</a>
       </div>
 
 
@@ -441,63 +475,6 @@ docReady(function() {
                 <!---------------------------------------------->
                 <!--            START TYPING XML              -->
                 <!---------------------------------------------->
-                <workflow-app name="Decision Check"
-                xmlns="uri:oozie:workflow:0.5">
-                <start to="curl_ambari"/>
-                <decision name="decision_1">
-                    <switch>
-                        <case to="website_up">${(wf:actionData('curl_website')['website_status'] == "1")}</case>
-                        <default to="website_down"/>
-                    </switch>
-                </decision>
-                <action name="curl_website">
-                    <shell
-                        xmlns="uri:oozie:shell-action:0.3">
-                        <job-tracker>${resourceManager}</job-tracker>
-                        <name-node>${nameNode}</name-node>
-                        <exec>bash</exec>
-                        <argument>-c</argument>
-                        <argument>echo website_status=$(curl -s -i --insecure www.google.com | grep -c 302)</argument>
-                        <capture-output></capture-output>
-                    </shell>
-                    <ok to="decision_1"/>
-                    <error to="kill"/>
-                </action>
-                <action name="website_down">
-                    <email
-                        xmlns="uri:oozie:email-action:0.2">
-               
-                    </email>
-                    <ok to="end"/>
-                    <error to="kill"/>
-                </action>
-                <action name="website_up">
-                    <email
-                        xmlns="uri:oozie:email-action:0.2">
-                  
-                    </email>
-                    <ok to="end"/>
-                    <error to="kill"/>
-                </action>
-                <kill name="kill">
-                    <message>${wf:errorMessage(wf:lastErrorNode())}</message>
-                </kill>
-                <end name="end"/>
-            </workflow-app>
-            </textarea>
-          </div>
-  
-    <div id="right-container">
-        <div id="myDiagramDiv" style="border: solid 1px black; width:900px; height:900px;"></div> 
-    </div>
-    <div id="log"></div>
-    </div>
-    </body>
-</body>
-
-
-
-                <!-- TEST Demo Data
                 <start to="step_01"/>
                 <action name="step_01">
                     <ok to="step_02"/>
@@ -537,7 +514,24 @@ docReady(function() {
                     <ok to="kill"/>
                     <error to="fail_node"/>
                 </action>
+
+
+            </textarea>
+          </div>
+  
+    <div id="right-container">
+        <div id="myDiagramDiv" style="border: solid 1px black; width:900px; height:900px;"></div> 
+    </div>
+    <div id="log"></div>
+    </div>
+    </body>
+</body>
+
+
+
+                <!-- TEST Demo Data  -->
+               
                                 
                 
-            -->
+
 </html>
