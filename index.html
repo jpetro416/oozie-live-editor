@@ -177,6 +177,7 @@ docReady(function() {
                     if(node_name_parsed.includes("html") || node_name_parsed.includes("body") || node_name_parsed.includes("fs")){continue;} //skip regular DOM elements
                    // alertOrConsole(node_name_parsed,false);
 
+              
                     //check for decision node
                     if(node_name_parsed.includes("decision")){
                         oozie_node.setDecisionNode(true);
@@ -184,6 +185,9 @@ docReady(function() {
                     }
 
                     if(oozie_node.isDecisionNode() && decision_node_fully_initialized == false){
+                        if(arrayOfLines[i].includes("tbl_drop_hive")){
+                       alertOrConsole(arrayOfLines[i], true)
+                   }
                         //todo: unlimited decision nodes array
                         if(arrayOfLines[i].includes("case to=")){ //decision 1
                             oozie_node.setNextNode(xml.documentElement.getAttribute("to"));
@@ -194,15 +198,16 @@ docReady(function() {
                         }
                     }
 
-                    //check for error node
+                    //check for error node (should always be the end node)
                     if(node_name_parsed.includes("error")){
                         oozie_node.setErrorNode(xml.documentElement.getAttribute("to"));
+                        end_node_found = true;
                     }
 
                     //check for next node
                     if(node_name_parsed.includes("ok")){
                         oozie_node.setNextNode(xml.documentElement.getAttribute("to"));
-                        end_node_found = true;
+                      
                         alertOrConsole(xml.documentElement.getAttribute("to"));
                     }
 
@@ -221,6 +226,7 @@ docReady(function() {
                         oozie_node = new OozieNode(); //zero out for next node
                         add_node_to_list = false; //reset flag
                         end_node_found = false; //reset flag
+                        decision_node_fully_initialized = false //reset flag for mutiple decision nodes in a row
                     }
 
            
