@@ -5,7 +5,7 @@ Live oozie workflow editor, real time code DAG updates
 ### License
 
 Apache License  <br />
-Version 2.0, January 2019  <br />
+Version 2.0, January 2004  <br />
 http://www.apache.org/licenses/  <br />
 
 ### Project Libs
