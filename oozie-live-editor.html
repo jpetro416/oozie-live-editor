@@ -1,0 +1,911 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel=stylesheet href="css/codemirror.css">
+    <script src="js/codemirror.js"></script>
+    <script src="js/xml.js"></script>
+    <script src="js/format_code.js"></script>
+    <script src="js/go.js"></script>  
+    <!--  DEBUG <script src="https://unpkg.com/gojs/release/go-debug.js"></script> -->
+    <!-- CSS Files -->
+    <link type="text/css" href="css/base.css" rel="stylesheet" />
+    <script>
+
+//Global 
+var node_list = [];
+var flag_actions = true; 
+var allkeys = true;
+var updated_copy_of_text_area = "";
+docReady(function() {
+    // DOM is loaded and ready for manipulation
+        function OozieNode() {  
+           this.node_id = "";  
+           this.previous_node = "";  
+           this.next_node = "";   
+           this.first_node = false;  
+           this.node_number = 0;
+           this.error_node = null;
+           this.primary_error_node = false;
+           this.decision_node = false;
+           this.decision_default_next_node = "";   
+           this.decision_case_nodes = [];
+            
+            this.getNodeID  = function() {  
+                  return this.node_id;  
+            };
+            this.getPreviousNode = function() {  
+                  return this.previous_node;  
+            };
+            this.getNextNode = function() {  
+                  return this.next_node;  
+            };
+            this.getIsFirstNode = function() {  
+                  return this.first_node;  
+            };
+        
+            this.getNodeNumber = function(){
+                return this.node_number;
+            };
+
+            this.getErrorNode = function(){
+                return this.error_node;
+            };
+
+            this.isPrimaryErrorNode = function(){
+                return this.primary_error_node;
+            };
+
+            this.isDecisionNode = function(){
+                return this.decision_node;
+            };
+
+            this.getDecisionDefaultNextNode = function(){
+                return this.decision_default_next_node;
+            };
+
+            this.getDecisionCaseNodesList = function(){
+                return this.decision_case_nodes;
+            };
+            
+             
+            this.setNodeID = function(node_id){
+                this.node_id = node_id;
+            };
+            this.setPreviousNode = function(previous_node){
+                this.previous_node = previous_node;
+            };
+            this.setNextNode = function(next_node){
+                this.next_node = next_node;
+            };
+            this.setIsFirstNode = function(first_node){
+                this.first_node = first_node;
+            };
+            
+            this.setNodeNumber = function(node_number){
+                this.node_number = node_number;
+            };
+
+            this.setErrorNode = function(error_node){
+                this.error_node = error_node;
+            };
+
+            this.setPrimaryErrorNode = function(primary_error_node){
+                this.primary_error_node = primary_error_node;
+            };
+
+            this.setDecisionNode = function(decision_node){
+                this.decision_node = decision_node;
+            };
+            this.setDecisionDefaultNextNode = function(decision_default_next_node){
+                this.decision_default_next_node = decision_default_next_node;
+            };
+            this.setDecisionCaseNodesList = function(incoming_case){
+                this.decision_case_nodes.push(incoming_case);
+            };
+            
+            
+        
+            this.printNodeInfo = function(){
+                console.log(
+                       " getNodeID: " + this.getNodeID(),
+                    "\n getIsFirstNode: " + this.getIsFirstNode(),
+                    "\n getPreviousNode: " + this.getPreviousNode(),
+                    "\n getNextNode: " + this.getNextNode(),
+                    "\n getNodeNumber: " + this.getNodeNumber(),
+                    "\n getErrorNode: " + this.getErrorNode(),
+                    "\n isPrimaryErrorNode: " + this.isPrimaryErrorNode(),
+                    "\n isDecisionNode: " + this.isDecisionNode(),
+                    "\n getDecisionDefaultNextNode: " + this.getDecisionDefaultNextNode(),
+                    "\n getDecisionCaseNodesList: " + this.getDecisionCaseNodesList().length
+                    );
+                for(let i=0; i < this.getDecisionCaseNodesList().length; i++){
+                    console.log("Decision Node #"+i + ": " + this.decision_case_nodes[i]);
+                }
+            };
+        } //----------------------------------------------------End class OozieNode
+
+        //----------------------------------------------------
+        //init the DAG graph
+        //----------------------------------------------------
+            var $ = go.GraphObject.make; 
+              myDiagram = $(go.Diagram, "myDiagramDiv",  // create a Diagram for the DIV HTML element
+                {
+                  "undoManager.isEnabled": true  // enable undo & redo
+                });
+             
+              myDiagram.nodeTemplate =  // define a simple Node template
+                $(go.Node, "Auto",  // the Shape will go around the TextBlock
+                  $(go.Shape, "RoundedRectangle", { strokeWidth: 0, fill: "white" },  
+                    new go.Binding("fill", "color")),  // Shape.fill is bound to Node.data.color
+                  $(go.TextBlock,
+                    { margin: 8 },  // some room around the text 
+                    new go.Binding("text", "key")) // TextBlock.text is bound to Node.data.key
+                );
+        
+        //----------------------------------------------------
+        //Code Mirror
+        //----------------------------------------------------
+            document.getElementById("xml_text_editor").value = vkbeautify.xml(document.getElementById("xml_text_editor").value);
+            var code_mirror_text_area = CodeMirror.fromTextArea(document.getElementById("xml_text_editor"), {
+              mode: 'application/xml',
+              theme: 'xq-dark',
+              lineNumbers: true,
+              lineWrapping: true,
+              readOnly: false,
+              //cursorBlinkRate: -1
+            });    
+            //save text before edits
+            updated_copy_of_text_area = code_mirror_text_area.getValue();
+            // console.log(code_mirror_text_area.getTextArea().value);
+            //----------------------------------------------------
+            //On key update text and graph
+            //----------------------------------------------------
+            document.body.onkeyup = function(event) {
+            event.preventDefault();
+            // if (event.keyCode === 13) { //enter key only // alert("Enter key pressed");      
+            
+            //autoFillOozie(event, code_mirror_text_area); //auto fill node info
+
+
+            if (allkeys) {  
+                  //reset node list and console output:
+                  var node_list = [];
+                  consoleCleanup();
+                  code_mirror_text_area.save();
+                  var textArea = code_mirror_text_area.getValue();
+                  updated_copy_of_text_area = textArea;
+                  var arrayOfLines = textArea.split("\n"); // text area
+                  var count_node = 0;
+                  var first_time = false;
+                  var oozie_node = new OozieNode();
+                  var add_node_to_list = false;
+                  var last_node_name_was = "";
+                  var first_node_name;
+                  var end_node_found = false;
+                  var decision_node_fully_initialized = false;
+                  var last_error_node = null;
+                  var all_error_nodes_foud = [];
+
+                  for(var i = 1;i < arrayOfLines.length;i++){
+                    //get lines
+                    var xml = parseXml(arrayOfLines[i]);
+                    var node_name_parsed = xml.documentElement.nodeName;
+                    if(arrayOfLines[i].includes("<html>") || arrayOfLines[i].includes("<body>")){continue;} //skip regular DOM elements
+                   // alertOrConsole(node_name_parsed,false);
+                        console.log(arrayOfLines[i]);
+              
+                    //check for decision node
+                    if(node_name_parsed.includes("decision")){
+                        oozie_node.setDecisionNode(true);
+                        oozie_node.setNodeID(xml.documentElement.getAttribute("name"));
+                    }
+
+                    if(oozie_node.isDecisionNode() && decision_node_fully_initialized == false){
+                        //todo: unlimited decision nodes array
+                        if(arrayOfLines[i].includes("case to=")){ //decision 1
+                            var decision_case = xml.documentElement.getAttribute("to");
+                            oozie_node.setDecisionCaseNodesList(decision_case);
+                        }
+                        if(arrayOfLines[i].includes("default to=")){ //default decision
+                            oozie_node.setDecisionDefaultNextNode(xml.documentElement.getAttribute("to"));
+                            decision_node_fully_initialized = true;
+                        }
+                    }
+
+                    //check for error node (could be the end node)
+                    if(node_name_parsed.includes("error")){ 
+                        var error_node = xml.documentElement.getAttribute("to");
+                        oozie_node.setErrorNode(error_node);
+                        all_error_nodes_foud.push(error_node);
+                       // end_node_found = true;
+                    }
+              
+                    //check for next node
+                    if(node_name_parsed.includes("ok")){
+                        oozie_node.setNextNode(xml.documentElement.getAttribute("to"));
+                    }
+                  
+                    //check for the real end node
+                    if(arrayOfLines[i].includes("</action>")){
+                     // alertOrConsole(arrayOfLines[i],true);
+                      end_node_found = true;
+                    }
+
+                    if(add_node_to_list && end_node_found && oozie_node.isDecisionNode() == false){
+                        node_list.push(oozie_node);
+                        console.log("Adding new node --------------------------");
+                        oozie_node.printNodeInfo();
+                        oozie_node = new OozieNode(); //zero out for next node
+                        add_node_to_list = false; //reset flag
+                        end_node_found = false; //reset flag
+                    }else if(oozie_node.isDecisionNode() && decision_node_fully_initialized){
+
+                        node_list.push(oozie_node);
+                        console.log("Adding new node --------------------------");
+                        oozie_node.printNodeInfo();
+                        oozie_node = new OozieNode(); //zero out for next node
+                        add_node_to_list = false; //reset flag
+                        end_node_found = false; //reset flag
+                        decision_node_fully_initialized = false //reset flag for mutiple decision nodes in a row
+                    }
+
+           
+                     //we found the first node
+                    if(node_name_parsed.includes("start")){
+                        first_node_name = xml.documentElement.getAttribute("to");
+                    if(first_node_name){
+                      first_time = true;
+                      continue;
+                    } 
+                  }
+ 
+                    //TODO: PRIMARY ERROR NODES!
+                    //actual error node being referenced by other nodes
+                    //  if(oozie_node.getErrorNode() != null && arrayOfLines[i].includes("action name=")  && arrayOfLines[i].includes(oozie_node.getErrorNode())){
+                    //     oozie_node.setPrimaryErrorNode(true);
+                    //    // alert("Comparing: "  + oozie_node.getErrorNode() + " |  to: " +arrayOfLines[i]);
+                    // }
+
+                    //actual error node being referenced by other nodes
+                //     if(arrayOfLines[i].includes("action name=")){
+                //     for(let err_id = 0; err_id < all_error_nodes_foud.length; err_id++){ 
+                //         if(arrayOfLines[i].includes(all_error_nodes_foud[err_id]) && all_error_nodes_foud[err_id].includes("kill") == false){
+                //         oozie_node.setPrimaryErrorNode(true);
+                //         //alert("Comparing: "  + oozie_node.getErrorNode() + " |  to: " +arrayOfLines[i]);
+                //     }
+                //     }
+                // }
+            
+
+                    //check nodes for error node 
+                    // if(arrayOfLines[i].includes("action name=") && node_list[id].getErrorNode()){
+                    //     for(let id = 0; id < node_list.length; id++){
+                    //       //  alert("Comparing: "  + oozie_node.getErrorNode() + " |  to: " +arrayOfLines[i]);
+                    //     if(arrayOfLines[i].includes(node_list[id].getErrorNode())){ //add error node
+                    //        // oozie_node.setPrimaryErrorNode(true);
+                    //     }
+                    //  }
+                    // } 
+        
+                    if(node_name_parsed.includes("action")){  //we found an action node
+                    var action_node_name = xml.documentElement.getAttribute("name");
+                  
+                    if(action_node_name){
+                    //first node check, let's check to make sure it's the same as the start node:
+                    if(oozie_node.getNodeID().includes(first_node_name) && first_time == true){  
+                      count_node = 1;
+                      first_time = false;
+                      oozie_node.setIsFirstNode(true);
+                      oozie_node.setNodeID(action_node_name);
+                      oozie_node.setPreviousNode(last_node_name_was);
+                      oozie_node.setNodeNumber(count_node);
+                      add_node_to_list = true;
+                      last_node_name_was = action_node_name;
+                      continue;
+                    }else{  //not first node:
+                      count_node++;
+                      oozie_node.setIsFirstNode(false);
+                      oozie_node.setNodeID(action_node_name);
+                      oozie_node.setPreviousNode(last_node_name_was);
+                      oozie_node.setNodeNumber(count_node);
+                      add_node_to_list = true;
+                      last_node_name_was = action_node_name;
+                      continue;
+                    }
+                   }
+                  }
+                 }
+                 updateGraph(node_list);
+            }
+            
+        }
+
+            //XML Parser
+            function parseXml(xmlStr) {    
+                return new DOMParser().parseFromString(xmlStr, "text/xml");
+            } 
+        
+            function updateGraph(node_list){
+
+                document.getElementById("myDiagramDiv").div = null;
+                myDiagram.div = null;
+                myDiagram = null;
+                go.Diagram.fromDiv = null;
+                myDiagram = $(go.Diagram, "myDiagramDiv",  // create a Diagram for the DIV HTML element
+                {
+                  "undoManager.isEnabled": true  // enable undo & redo
+                });
+                  
+                myDiagram.nodeTemplate =  // define a simple Node template
+                $(go.Node, "Auto",  // the Shape will go around the TextBlock
+                    new go.Binding("location", "loc"),  // get the Node.location from the data.loc value
+                $(go.Shape, "RoundedRectangle", { strokeWidth: 1, fill: "white" },
+                    // Shape.fill is bound to Node.data.color
+                    new go.Binding("fill", "color")),
+                $(go.TextBlock,
+                    { margin: 8, font: "bold 14px sans-serif", stroke: '#333' }, // Specify a margin to add some room around the text
+                    // TextBlock.text is bound to Node.data.key
+                    new go.Binding("text", "key"))
+                );
+                 
+                //create the model data that will be represented by Nodes and Links
+                //tree test:
+                myDiagram.layout = $(go.TreeLayout, { 
+                    angle: 90 ,
+                    // nodeSpacing: 80,
+                    // arrangement: go.TreeLayout.ArrangementFixedRoutes,
+                    // alignment: go.TreeLayout.AlignmentCenterSubtrees,
+                    // layerSpacing: 110
+                });
+
+                var model = new go.GraphLinksModel();
+                //Add normal path data
+                for(let id = 0; id < node_list.length; id++){
+                    if(node_list[id].isPrimaryErrorNode()){ //add error node
+                    model.addNodeData( { key: node_list[id].getNodeID(), color: "red" } );
+                    model.addLinkData( { from: "", to: "" } ); 
+                    }else if(node_list[id].isDecisionNode()){//add decision node
+                    model.addNodeData( { key: node_list[id].getNodeID(), color: randomDAGColor()} );
+                    for(let dn_count = 0; dn_count < node_list[id].getDecisionCaseNodesList().length; dn_count++){ //multi decision node cases
+                        var desc_node = node_list[id].getDecisionCaseNodesList();
+                        model.addLinkData( { from: node_list[id].getNodeID(), to: desc_node[dn_count]} );
+                        //alert("Adding link from: " + node_list[id].getNodeID()+" to: " +desc_node[dn_count]);
+                    }
+                    model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getDecisionDefaultNextNode() } );
+                    }else{//add normal node
+                    if(node_list[id].getNodeID().includes("kill") || node_list[id].getNodeID().includes("fail") ){ //quick and dirty kill and failure node highlight TODO: REAL ID kill/fail node
+                        model.addNodeData( { key: node_list[id].getNodeID(), color: "red"} );
+                        model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
+                    }else{
+                    model.addNodeData( { key: node_list[id].getNodeID(), color: randomDAGColor()} );
+                    model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
+                    }
+                    if(node_list[id].getErrorNode()!=null){ //add normal node error link node
+                    model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getErrorNode() } );  //add error node link
+                    }
+                 }
+                 
+                }
+                //alertOrConsole(model.nodeDataArray,false);
+                myDiagram.model = model;
+                
+            }
+
+        });   
+
+
+        function replaceTextAreaText(incoming_txt){
+
+        }
+
+        //location points TODO
+        function showPoint(loc) {
+            var docloc = diagram.transformDocToView(loc);
+            var elt = document.getElementById("Message1");
+            elt.textContent = "Selected node location,\ndocument coordinates: " + loc.x.toFixed(2) + " " + loc.y.toFixed(2) +
+                            "\nview coordinates: " + docloc.x.toFixed(2) + " " + docloc.y.toFixed(2);
+        }
+
+        //random color generator
+        function randomDAGColor () {
+            var rando_num = Math.floor(Math.random() * 6) + 1
+            if(rando_num == 1){
+                return "lightblue";
+            }else if(rando_num == 2){
+                return "lightgreen";
+            }else if(rando_num == 3){
+                return "orange";
+            }else if(rando_num == 4){
+                return "lightgreen";
+            }else if(rando_num == 5){
+                return "pink";
+            }else{
+                return "lightblue";
+            }
+        }
+
+        //random number generator
+        function randomIntFromInterval(min, max) { // min and max included 
+            return Math.floor(Math.random() * (max - min + 1) + min);
+        }
+
+        //logger
+        function alertOrConsole(node, flag){
+        if(flag){
+            alert(node);
+        }else{
+            console.log("----------------");
+            console.log(node);
+        }
+        }
+  
+        //save to file
+        function exportXMLToFile(){
+            var pom = document.createElement('a');
+            pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(updated_copy_of_text_area));
+            pom.setAttribute('download', "workflow.xml");
+
+            if (document.createEvent) {
+                var event = document.createEvent('MouseEvents');
+                event.initEvent('click', true, true);
+                pom.dispatchEvent(event);
+            }
+            else {
+                pom.click();
+            }
+        }
+
+            //about
+            function aboutOLE(){
+                alert("Version: 1.0.9\nSoftware Created by: Joseph Petro\nPlease visit gojs.net to purchase a license for Go.JS");
+            }
+
+            function docReady(fn) {
+                // see if DOM is already available
+                if (document.readyState === "complete" || document.readyState === "interactive") {
+                    // call on next available tick
+                    setTimeout(fn, 1);
+                } else {
+                    document.addEventListener("DOMContentLoaded", fn);
+                }
+            }
+
+            function consoleCleanup(){
+            if(console._commandLineAPI && console._commandLineAPI.clear){
+                console._commandLineAPI.clear();//clear in some safari versions
+            }else if(console._inspectorCommandLineAPI && console._inspectorCommandLineAPI.clear){
+                console._inspectorCommandLineAPI.clear();//clear in some chrome versions
+            }else if(console.clear){
+                console.clear();//clear in other chrome versions (maybe more browsers?)
+            }else{
+                console.log(Array(100).join("\n"));//print 100 newlines if nothing else works
+            }
+        }
+
+        // function autoFillOozie(e,textArea){
+        //     if (e.keyCode == 18 && e.keyCode == 69) { //ctrl + e: email node
+        //         alertOrConsole("yo", true);
+        //         var email_node = new CreateOozieNodes();
+        //         insertAtCursor(textArea,email_node.getEmailNode());
+        //      } 
+        // }
+
+
+        function insertAtCursor(myField, myValue) {
+            //IE support
+            if (document.selection) {
+                myField.focus();
+                sel = document.selection.createRange();
+                sel.text = myValue;
+            }
+            // Microsoft Edge
+            else if(window.navigator.userAgent.indexOf("Edge") > -1) {
+            var startPos = myField.selectionStart; 
+            var endPos = myField.selectionEnd; 
+
+            myField.value = myField.value.substring(0, startPos)+ myValue 
+                    + myField.value.substring(endPos, myField.value.length); 
+
+            var pos = startPos + myValue.length;
+            myField.focus();
+            myField.setSelectionRange(pos, pos);
+            }
+            //MOZILLA and others
+            else if (myField.selectionStart || myField.selectionStart == '0') {
+                var startPos = myField.selectionStart;
+                var endPos = myField.selectionEnd;
+                myField.value = myField.value.substring(0, startPos)
+                    + myValue
+                    + myField.value.substring(endPos, myField.value.length);
+            } else {
+                myField.value += myValue;
+            }
+            triggerEvent(myField,'input');
+        }
+
+            function triggerEvent(el, type){
+            if ('createEvent' in document) {
+                // modern browsers, IE9+
+                var e = document.createEvent('HTMLEvents');
+                e.initEvent(type, false, true);
+                el.dispatchEvent(e);
+            } else {
+                // IE 8
+                var e = document.createEventObject();
+                e.eventType = type;
+                el.fireEvent('on'+e.eventType, e);
+            }
+            }
+       //-------------------------------------------------------------
+       //Auto Create Nodes
+       //-------------------------------------------------------------
+        function CreateOozieNodes(){
+            this.email;
+            this.shell;
+            this.hive;
+            this.pig;
+            this.sqoop;
+            this.distcp;
+            this.decision;
+
+            this.getEmailNode = function(){
+                return this.email;
+            };
+
+
+            this.getShellNode = function(){
+                return this.shell;
+            };
+
+            
+            this.getHiveNode = function(){
+                return this.hive;
+            };
+
+            
+            this.getPigNode = function(){
+                return this.pig;
+            };
+
+
+            this.getSqoopNode = function(){
+                return this.sqoop;
+            };
+
+            this.getDistcpNode = function(){
+                return this.distcp;
+            };
+
+            this.getDecisionNode = function(){
+                return this.decision;
+            }
+      //--------------------------------------------
+      this.setEmailNode = function(){ //email
+                var email = `
+<action name=\"[NODE-NAME]\">
+<email xmlns=\"uri:oozie:email-action:0.2\">
+<to>[COMMA-SEPARATED-TO-ADDRESSES]</to>
+<cc>[COMMA-SEPARATED-CC-ADDRESSES]</cc> 
+<bcc>[COMMA-SEPARATED-BCC-ADDRESSES]</bcc> 
+<subject>[SUBJECT]</subject>
+<body>[BODY]</body>
+<content_type>[CONTENT-TYPE]</content_type> 
+<attachment>[COMMA-SEPARATED-HDFS-FILE-PATHS]</attachment> 
+</email>
+<ok to=\"[NODE-NAME]\"/>
+<error to="[NODE-NAME]"/>
+</action>
+                `;
+                this.email = email;
+            };
+
+            this.setShellNode = function(){ //shell
+             var shell =  `
+<action name='shell1'>
+<shell xmlns="uri:oozie:shell-action:0.1">
+<job-tracker>\${jobTracker}</job-tracker>
+<name-node>\${nameNode}</name-node>
+<configuration>
+<property>
+<name>mapred.job.queue.name</name>
+<value>\${queueName}</value>
+</property>
+</configuration>
+<exec>\${EXEC}</exec>
+<argument>A</argument>
+<argument>B</argument>
+<file>\${EXEC}#\${EXEC}</file> <!--Copy the executable to compute node's current working directory -->
+</shell>
+<ok to="end" />
+<error to="fail" />
+</action>
+            `;
+            this.shell = shell;
+            };
+
+            this.setHiveNode = function(){ //hive
+             var hive = 
+            `
+<action name="myfirsthivejob">
+<hive xmlns="uri:oozie:hive-action:0.2">
+<job-tracker>foo:8021</job-tracker>
+<name-node>bar:8020</name-node>
+<prepare>
+<delete path="\${jobOutput}"/>
+</prepare>
+<configuration>
+<property>
+<name>mapred.compress.map.output</name>
+<value>true</value>
+</property>
+</configuration>
+<!-- <script>myscript.q</script> UNCOMMENT-->
+<param>InputDir=/home/tucu/input-data</param>
+<param>OutputDir=\${jobOutput}</param>
+</hive>
+<ok to="myotherjob"/>
+<error to="errorcleanup"/>
+</action>
+            `;
+            this.hive = hive;
+        };
+        this.setPigNode = function(){ //pig
+             var pig = 
+            `
+<action name="myfirstpigjob">
+<pig>
+<job-tracker>foo:9001</job-tracker>
+<name-node>bar:9000</name-node>
+<prepare>
+<delete path="\${jobOutput}"/>
+</prepare>
+<configuration>
+<property>
+<name>mapred.compress.map.output</name>
+<value>true</value>
+</property>
+<property>
+<name>oozie.action.external.stats.write</name>
+<value>true</value>
+</property>
+</configuration>
+<!--  <script>/mypigscript.pig</script> UNCOMMENT-->
+<argument>-param</argument>
+<argument>INPUT=\${inputDir}</argument>
+<argument>-param</argument>
+<argument>OUTPUT=\${outputDir}/pig-output3</argument>
+</pig>
+<ok to="myotherjob"/>
+<error to="errorcleanup"/>
+</action>
+
+            `;
+            this.pig = pig;
+        };
+        this.setSqoopNode = function(){ //sqoop
+             var sqoop = 
+            `
+<action name="myfirsthivejob">
+<sqoop xmlns="uri:oozie:sqoop-action:0.2">
+<job-tracker>foo:8021</job-tracker>
+<name-node>bar:8020</name-node>
+<prepare>
+<delete path="\${jobOutput}"/>
+</prepare>
+<configuration>
+<property>
+<name>mapred.compress.map.output</name>
+<value>true</value>
+</property>
+</configuration>
+<command>import  --connect jdbc:hsqldb:file:db.hsqldb --table TT --target-dir hdfs://localhost:8020/user/tucu/foo -m 1</command>
+</sqoop>
+<ok to="myotherjob"/>
+<error to="errorcleanup"/>
+</action>
+            `;
+            this.sqoop = sqoop;
+        };
+        this.setDistcpNode = function(){ //distcp
+            var distcp =
+            `
+<action name="[NODE-NAME]">
+<distcp xmlns="uri:oozie:distcp-action:0.2">
+<job-tracker>\${jobTracker}</job-tracker>
+<name-node>\${nameNode1}</name-node>
+<arg>\${nameNode1}/path/to/input.txt</arg>
+<arg>\${nameNode2}/path/to/output.txt</arg>
+</distcp>
+<ok to="[NODE-NAME]"/>
+<error to="[NODE-NAME]"/>
+</action>
+            `;
+            this.distcp = distcp;
+        }
+
+
+        this.setDecisionNode = function(){ //decision
+            var decision = 
+` 
+<decision name="mydecision">
+<switch>
+<case to="reconsolidatejob">
+\${fs:fileSize(secondjobOutputDir) gt 10 * GB}
+</case> <case to="rexpandjob">
+\${fs:fileSize(secondjobOutputDir) lt 100 * MB}
+</case>
+<case to="recomputejob">
+\${ hadoop:counters('secondjob')[RECORDS][REDUCE_OUT] lt 1000000 }
+</case>
+<default to="end"/>
+</switch>
+</decision>
+`;
+        this.decision = decision;
+        }
+
+      //--------------------------------------------
+
+
+        
+    }
+
+        // ================================================================================
+        // Clipboard
+        // ================================================================================
+        function copyToClipboard(text,type_of_node) {
+        var hold_base_txt = text;
+        var selected = false;
+        var el = document.createElement('textarea');      // Create temp element off-screen to hold text.
+        var oozie_node_spawn    = new CreateOozieNodes();
+        if(type_of_node=="email_node_create_btn"){
+            oozie_node_spawn.setEmailNode();
+            text = oozie_node_spawn.getEmailNode(); 
+         }else  if(type_of_node=="shell_node_create_btn"){ //TODO
+            oozie_node_spawn.setShellNode();
+            text = oozie_node_spawn.getShellNode(); 
+         } else  if(type_of_node=="hive_node_create_btn"){ //TODO
+            oozie_node_spawn.setHiveNode();
+            text = oozie_node_spawn.getHiveNode(); 
+         } 
+         else  if(type_of_node=="pig_node_create_btn"){ //TODO
+            oozie_node_spawn.setPigNode();
+            text = oozie_node_spawn.getPigNode(); 
+         } else  if(type_of_node=="sqoop_node_create_btn"){ //TODO
+            oozie_node_spawn.setSqoopNode();
+            text = oozie_node_spawn.getSqoopNode(); 
+         }  else  if(type_of_node=="distcp_node_create_btn"){ //distcp
+            oozie_node_spawn.setDistcpNode();
+            text = oozie_node_spawn.getDistcpNode(); 
+         } else  if(type_of_node=="decision_node_create_btn"){ //decision
+            oozie_node_spawn.setDecisionNode();
+            text = oozie_node_spawn.getDecisionNode(); 
+         } 
+        el.value = text;
+        el.setAttribute('readonly', '');
+        el.style.position = 'absolute';
+        el.style.left = '-9999px';
+        document.body.appendChild(el);
+        if (document.getSelection().rangeCount > 0) {
+            selected = document.getSelection().getRangeAt(0)
+        }
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        if (selected) {
+            document.getSelection().removeAllRanges();
+            document.getSelection().addRange(selected);
+        }
+         // give some visual feadback
+        var toaster = document.getElementById("snackbar");
+        toaster.textContent = hold_base_txt +" node copied to clipboard";
+        toaster.className = "show";
+        setTimeout(function(){ toaster.className = toaster.className.replace("show", ""); }, 5000);
+    
+    };
+
+        
+          </script>
+</head>
+
+ 
+
+ 
+
+<body id = "main_section">  
+    <div class="topnav"> 
+        <a class="active" href="#Editor">Editor</a>
+        <a href="#Export" onclick="exportXMLToFile()">Export Workflow</a>
+        <a href="#about"  onclick="aboutOLE()">About</a>
+        <a  target="_blank" rel="noopener noreferrer" href="https://oozie.apache.org/docs/4.3.1/">Oozie Doc</a>
+        <a href="#about" >|</a>
+        <a href="#about"  id= "email_node_create_btn"onclick="copyToClipboard('email','email_node_create_btn')">Email Node</a>
+        <a href="#about"  id= "hive_node_create_btn"onclick="copyToClipboard('hive','hive_node_create_btn')">Hive Node</a>
+        <a href="#about"  id= "pig_node_create_btn"onclick="copyToClipboard('pig','pig_node_create_btn')">Pig Node</a>
+        <a href="#about"  id= "shell_node_create_btn"onclick="copyToClipboard('shell','shell_node_create_btn')">Shell Node</a>
+        <a href="#about"  id= "sqoop_node_create_btn"onclick="copyToClipboard('sqoop','sqoop_node_create_btn')">Sqoop Node</a>
+        <a href="#about"  id= "distcp_node_create_btn"onclick="copyToClipboard('distcp','distcp_node_create_btn')">DistCp Node</a>
+        <a href="#about"  id= "decision_node_create_btn"onclick="copyToClipboard('decision','decision_node_create_btn')">Decision Node</a>
+      </div>
+
+
+    <!-----------FLOW CHART START------------------->
+    <div id="container">
+        <div id="left-container">
+            <!-----------XML EDITOR START------------------->
+            <textarea id="xml_text_editor">
+                <!---------------------------------------------->
+                <!--            START TYPING XML              -->
+                <!---------------------------------------------->
+                <workflow-app
+                xmlns='uri:oozie:workflow:0.3' name='shell-wf'>
+                <start to="step_01"/>
+                <action name="step_01">
+                    <ok to="step_02"/>
+                    <error to="fail_node"/>   
+                </action>
+                <action name="step_02">
+                    <fs>
+                        <name-node>${nameNode}</name-node>
+                        <chmod path="${hdfs_ingest_path}/*" permissions="777" dir-files="false"></chmod>
+                    </fs>
+                    <ok to="decision"/>
+                    <error to="fail_node"/>
+                </action>
+                <decision name="decision">
+                    <switch>
+                        <case to="step_04">
+        ${fs:fileSize(secondjobOutputDir) gt 10 * GB} 
+                    </case>
+                    <case to="step_05">
+        ${fs:fileSize(secondjobOutputDir) gt 10 * GB} 
+                        </case>
+                        <default to="end"/>
+                    </switch>
+                </decision>
+                <action name="fail_node">
+                    <ok to="kill"/>
+                    <error to="fail_node"/>
+                </action>
+                <action name="step_04">
+                    <ok to="step_06"/>
+                    <error to="fail_node"/>
+                </action>
+                <action name="step_05">
+                    <ok to="step_06"/>
+                    <error to="fail_node"/>
+                </action>
+                <action name="step_06">
+                    <ok to="end"/>
+                    <error to="fail_node"/>
+                </action>
+                
+                <action name="end">
+                    <ok to="kill"/>
+                    <error to="fail_node"/>
+                </action>
+                <action name="kill">
+                    <ok to="kill"/>
+                    <error to="fail_node"/>
+                </action>
+            </workflow-app>
+            </textarea>
+          </div>
+  
+    <div id="right-container">
+        <div id="myDiagramDiv" style="border: solid 1px black; width:900px; height:900px;"></div> 
+    </div>
+    <div id="log"></div>
+    </div>
+    </body>
+</body>
+
+
+<!-- The actual snackbar -->
+<div id="snackbar"></div>
+                <!-- TEST Demo Data  -->
+               
+                                
+                
+
+</html>
