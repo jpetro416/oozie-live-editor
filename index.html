@@ -27,6 +27,7 @@ docReady(function() {
            this.primary_error_node = false;
            this.decision_node = false;
            this.decision_default_next_node = "";   
+           this.decision_case_nodes = [];
             
             this.getNodeID  = function() {  
                   return this.node_id;  
@@ -59,6 +60,10 @@ docReady(function() {
 
             this.getDecisionDefaultNextNode = function(){
                 return this.decision_default_next_node;
+            };
+
+            this.getDecisionCaseNodesList = function(){
+                return this.decision_case_nodes;
             };
             
              
@@ -93,7 +98,10 @@ docReady(function() {
             this.setDecisionDefaultNextNode = function(decision_default_next_node){
                 this.decision_default_next_node = decision_default_next_node;
             };
-
+            this.setDecisionCaseNodesList = function(incoming_case){
+                this.decision_case_nodes.push(incoming_case);
+            };
+            
             
         
             this.printNodeInfo = function(){
@@ -106,8 +114,12 @@ docReady(function() {
                     "\n getErrorNode: " + this.getErrorNode(),
                     "\n isPrimaryErrorNode: " + this.isPrimaryErrorNode(),
                     "\n isDecisionNode: " + this.isDecisionNode(),
-                    "\n getDecisionDefaultNextNode: " + this.getDecisionDefaultNextNode()
+                    "\n getDecisionDefaultNextNode: " + this.getDecisionDefaultNextNode(),
+                    "\n getDecisionCaseNodesList: " + this.getDecisionCaseNodesList().length
                     );
+                for(let i=0; i < this.getDecisionCaseNodesList().length; i++){
+                    console.log("Decision Node #"+i + ": " + this.decision_case_nodes[i]);
+                }
             };
         } //----------------------------------------------------End class
 
@@ -133,7 +145,7 @@ docReady(function() {
         //Code Mirror
         //----------------------------------------------------
             document.getElementById("xml_text_editor").value = vkbeautify.xml(document.getElementById("xml_text_editor").value);
-            var updated_workdammit = CodeMirror.fromTextArea(document.getElementById("xml_text_editor"), {
+            var code_mirror_text_area = CodeMirror.fromTextArea(document.getElementById("xml_text_editor"), {
               mode: 'application/xml',
               theme: 'xq-dark',
               lineNumbers: true,
@@ -142,8 +154,8 @@ docReady(function() {
               //cursorBlinkRate: -1
             });    
             //save text before edits
-            updated_copy_of_text_area = updated_workdammit.getValue();
-            // console.log(updated_workdammit.getTextArea().value);
+            updated_copy_of_text_area = code_mirror_text_area.getValue();
+            // console.log(code_mirror_text_area.getTextArea().value);
             //----------------------------------------------------
             //On key update text and graph
             //----------------------------------------------------
@@ -151,15 +163,15 @@ docReady(function() {
             event.preventDefault();
             // if (event.keyCode === 13) { //enter key only // alert("Enter key pressed");      
             
-            autoFillOozie(event, updated_workdammit); //auto fill node info
+            autoFillOozie(event, code_mirror_text_area); //auto fill node info
 
 
             if (allkeys) {  
                   //reset node list and console output:
                   var node_list = [];
                   consoleCleanup();
-                  updated_workdammit.save();
-                  var textArea = updated_workdammit.getValue();
+                  code_mirror_text_area.save();
+                  var textArea = code_mirror_text_area.getValue();
                   updated_copy_of_text_area = textArea;
                   var arrayOfLines = textArea.split("\n"); // text area
                   var count_node = 0;
@@ -188,11 +200,10 @@ docReady(function() {
                     }
 
                     if(oozie_node.isDecisionNode() && decision_node_fully_initialized == false){
-                        if(arrayOfLines[i].includes("tbl_drop_hive")){
-                   }
                         //todo: unlimited decision nodes array
                         if(arrayOfLines[i].includes("case to=")){ //decision 1
-                            oozie_node.setNextNode(xml.documentElement.getAttribute("to"));
+                            var decision_case = xml.documentElement.getAttribute("to");
+                            oozie_node.setDecisionCaseNodesList(decision_case);
                         }
                         if(arrayOfLines[i].includes("default to=")){ //default decision
                             oozie_node.setDecisionDefaultNextNode(xml.documentElement.getAttribute("to"));
@@ -354,7 +365,11 @@ docReady(function() {
                     model.addLinkData( { from: "", to: "" } ); 
                     }else if(node_list[id].isDecisionNode()){//add decision node
                     model.addNodeData( { key: node_list[id].getNodeID(), color: randomDAGColor()} );
-                    model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
+                    for(let dn_count = 0; dn_count < node_list[id].getDecisionCaseNodesList().length; dn_count++){ //multi decision node cases
+                        var desc_node = node_list[id].getDecisionCaseNodesList();
+                        model.addLinkData( { from: node_list[id].getNodeID(), to: desc_node[dn_count]} );
+                        //alert("Adding link from: " + node_list[id].getNodeID()+" to: " +desc_node[dn_count]);
+                    }
                     model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getDecisionDefaultNextNode() } );
                     }else{//add normal node
                     if(node_list[id].getNodeID().includes("kill") || node_list[id].getNodeID().includes("fail") ){ //quick and dirty kill and failure node highlight TODO: REAL ID kill/fail node
@@ -375,21 +390,12 @@ docReady(function() {
                 
             }
 
-
-            //copy to clipboard
-        //     span.onclick = function() {
-        //     document.execCommand("copy");
-        //     }
-
-        //     span.addEventListener("copy", function(event) {
-        //     event.preventDefault();
-        //     if (event.clipboardData) {
-        //         event.clipboardData.setData("text/plain", span.textContent);
-        //         console.log(event.clipboardData.getData("text"))
-        //     }
-        //     });
-
         });   
+
+
+        function replaceTextAreaText(incoming_txt){
+
+        }
 
         //location points TODO
         function showPoint(loc) {
@@ -450,7 +456,7 @@ docReady(function() {
 
             //about
             function aboutOLE(){
-                alert("Version: 1.0.8\nSoftware Created by: Joseph Petro\nPlease visit gojs.net to purchase a license for Go.JS");
+                alert("Version: 1.0.9\nSoftware Created by: Joseph Petro\nPlease visit gojs.net to purchase a license for Go.JS");
             }
 
             function docReady(fn) {
@@ -538,6 +544,8 @@ docReady(function() {
             this.hive;
             this.pig;
             this.sqoop;
+            this.distcp;
+            this.decision;
 
             this.getEmailNode = function(){
                 return this.email;
@@ -563,46 +571,53 @@ docReady(function() {
                 return this.sqoop;
             };
 
+            this.getDistcpNode = function(){
+                return this.distcp;
+            };
+
+            this.getDecisionNode = function(){
+                return this.decision;
+            }
       //--------------------------------------------
       this.setEmailNode = function(){ //email
                 var email = `
-                <action name=\"[NODE-NAME]\">
-                <email xmlns=\"uri:oozie:email-action:0.2\">
-                <to>[COMMA-SEPARATED-TO-ADDRESSES]</to>
-                <cc>[COMMA-SEPARATED-CC-ADDRESSES]</cc> 
-                <bcc>[COMMA-SEPARATED-BCC-ADDRESSES]</bcc> 
-                <subject>[SUBJECT]</subject>
-                <body>[BODY]</body>
-                <content_type>[CONTENT-TYPE]</content_type> 
-                <attachment>[COMMA-SEPARATED-HDFS-FILE-PATHS]</attachment> 
-                </email>
-                <ok to=\"[NODE-NAME]\"/>
-                <error to="[NODE-NAME]"/>
-                </action>
+<action name=\"[NODE-NAME]\">
+<email xmlns=\"uri:oozie:email-action:0.2\">
+<to>[COMMA-SEPARATED-TO-ADDRESSES]</to>
+<cc>[COMMA-SEPARATED-CC-ADDRESSES]</cc> 
+<bcc>[COMMA-SEPARATED-BCC-ADDRESSES]</bcc> 
+<subject>[SUBJECT]</subject>
+<body>[BODY]</body>
+<content_type>[CONTENT-TYPE]</content_type> 
+<attachment>[COMMA-SEPARATED-HDFS-FILE-PATHS]</attachment> 
+</email>
+<ok to=\"[NODE-NAME]\"/>
+<error to="[NODE-NAME]"/>
+</action>
                 `;
                 this.email = email;
             };
 
             this.setShellNode = function(){ //shell
              var shell =  `
-             <action name='shell1'>
-        <shell xmlns="uri:oozie:shell-action:0.1">
-            <job-tracker>\${jobTracker}</job-tracker>
-            <name-node>\${nameNode}</name-node>
-            <configuration>
-                <property>
-                  <name>mapred.job.queue.name</name>
-                  <value>\${queueName}</value>
-                </property>
-            </configuration>
-            <exec>\${EXEC}</exec>
-            <argument>A</argument>
-            <argument>B</argument>
-            <file>\${EXEC}#\${EXEC}</file> <!--Copy the executable to compute node's current working directory -->
-        </shell>
-        <ok to="end" />
-        <error to="fail" />
-        </action>
+<action name='shell1'>
+<shell xmlns="uri:oozie:shell-action:0.1">
+<job-tracker>\${jobTracker}</job-tracker>
+<name-node>\${nameNode}</name-node>
+<configuration>
+<property>
+<name>mapred.job.queue.name</name>
+<value>\${queueName}</value>
+</property>
+</configuration>
+<exec>\${EXEC}</exec>
+<argument>A</argument>
+<argument>B</argument>
+<file>\${EXEC}#\${EXEC}</file> <!--Copy the executable to compute node's current working directory -->
+</shell>
+<ok to="end" />
+<error to="fail" />
+</action>
             `;
             this.shell = shell;
             };
@@ -610,87 +625,123 @@ docReady(function() {
             this.setHiveNode = function(){ //hive
              var hive = 
             `
-            <action name="myfirsthivejob">
-        <hive xmlns="uri:oozie:hive-action:0.2">
-            <job-tracker>foo:8021</job-tracker>
-            <name-node>bar:8020</name-node>
-            <prepare>
-                <delete path="\${jobOutput}"/>
-            </prepare>
-            <configuration>
-                <property>
-                    <name>mapred.compress.map.output</name>
-                    <value>true</value>
-                </property>
-            </configuration>
-            <!-- <script>myscript.q</script> UNCOMMENT-->
-            <param>InputDir=/home/tucu/input-data</param>
-            <param>OutputDir=\${jobOutput}</param>
-        </hive>
-        <ok to="myotherjob"/>
-        <error to="errorcleanup"/>
-      </action>
+<action name="myfirsthivejob">
+<hive xmlns="uri:oozie:hive-action:0.2">
+<job-tracker>foo:8021</job-tracker>
+<name-node>bar:8020</name-node>
+<prepare>
+<delete path="\${jobOutput}"/>
+</prepare>
+<configuration>
+<property>
+<name>mapred.compress.map.output</name>
+<value>true</value>
+</property>
+</configuration>
+<!-- <script>myscript.q</script> UNCOMMENT-->
+<param>InputDir=/home/tucu/input-data</param>
+<param>OutputDir=\${jobOutput}</param>
+</hive>
+<ok to="myotherjob"/>
+<error to="errorcleanup"/>
+</action>
             `;
             this.hive = hive;
         };
         this.setPigNode = function(){ //pig
              var pig = 
             `
-            <action name="myfirstpigjob">
-        <pig>
-            <job-tracker>foo:9001</job-tracker>
-            <name-node>bar:9000</name-node>
-            <prepare>
-                <delete path="\${jobOutput}"/>
-            </prepare>
-            <configuration>
-                <property>
-                    <name>mapred.compress.map.output</name>
-                    <value>true</value>
-                </property>
-                <property>
-                    <name>oozie.action.external.stats.write</name>
-                    <value>true</value>
-                </property>
-            </configuration>
-            <!--  <script>/mypigscript.pig</script> UNCOMMENT-->
-            <argument>-param</argument>
-            <argument>INPUT=\${inputDir}</argument>
-            <argument>-param</argument>
-            <argument>OUTPUT=\${outputDir}/pig-output3</argument>
-        </pig>
-        <ok to="myotherjob"/>
-        <error to="errorcleanup"/>
-    </action>
- 
+<action name="myfirstpigjob">
+<pig>
+<job-tracker>foo:9001</job-tracker>
+<name-node>bar:9000</name-node>
+<prepare>
+<delete path="\${jobOutput}"/>
+</prepare>
+<configuration>
+<property>
+<name>mapred.compress.map.output</name>
+<value>true</value>
+</property>
+<property>
+<name>oozie.action.external.stats.write</name>
+<value>true</value>
+</property>
+</configuration>
+<!--  <script>/mypigscript.pig</script> UNCOMMENT-->
+<argument>-param</argument>
+<argument>INPUT=\${inputDir}</argument>
+<argument>-param</argument>
+<argument>OUTPUT=\${outputDir}/pig-output3</argument>
+</pig>
+<ok to="myotherjob"/>
+<error to="errorcleanup"/>
+</action>
+
             `;
             this.pig = pig;
         };
         this.setSqoopNode = function(){ //sqoop
              var sqoop = 
             `
-            <action name="myfirsthivejob">
-        <sqoop xmlns="uri:oozie:sqoop-action:0.2">
-            <job-tracker>foo:8021</job-tracker>
-            <name-node>bar:8020</name-node>
-            <prepare>
-                <delete path="\${jobOutput}"/>
-            </prepare>
-            <configuration>
-                <property>
-                    <name>mapred.compress.map.output</name>
-                    <value>true</value>
-                </property>
-            </configuration>
-            <command>import  --connect jdbc:hsqldb:file:db.hsqldb --table TT --target-dir hdfs://localhost:8020/user/tucu/foo -m 1</command>
-        </sqoop>
-        <ok to="myotherjob"/>
-        <error to="errorcleanup"/>
-    </action>
+<action name="myfirsthivejob">
+<sqoop xmlns="uri:oozie:sqoop-action:0.2">
+<job-tracker>foo:8021</job-tracker>
+<name-node>bar:8020</name-node>
+<prepare>
+<delete path="\${jobOutput}"/>
+</prepare>
+<configuration>
+<property>
+<name>mapred.compress.map.output</name>
+<value>true</value>
+</property>
+</configuration>
+<command>import  --connect jdbc:hsqldb:file:db.hsqldb --table TT --target-dir hdfs://localhost:8020/user/tucu/foo -m 1</command>
+</sqoop>
+<ok to="myotherjob"/>
+<error to="errorcleanup"/>
+</action>
             `;
             this.sqoop = sqoop;
         };
+        this.setDistcpNode = function(){ //distcp
+            var distcp =
+            `
+<action name="[NODE-NAME]">
+<distcp xmlns="uri:oozie:distcp-action:0.2">
+<job-tracker>\${jobTracker}</job-tracker>
+<name-node>\${nameNode1}</name-node>
+<arg>\${nameNode1}/path/to/input.txt</arg>
+<arg>\${nameNode2}/path/to/output.txt</arg>
+</distcp>
+<ok to="[NODE-NAME]"/>
+<error to="[NODE-NAME]"/>
+</action>
+            `;
+            this.distcp = distcp;
+        }
 
+
+        this.setDecisionNode = function(){ //decision
+            var decision = 
+` 
+<decision name="mydecision">
+<switch>
+<case to="reconsolidatejob">
+\${fs:fileSize(secondjobOutputDir) gt 10 * GB}
+</case> <case to="rexpandjob">
+\${fs:fileSize(secondjobOutputDir) lt 100 * MB}
+</case>
+<case to="recomputejob">
+\${ hadoop:counters('secondjob')[RECORDS][REDUCE_OUT] lt 1000000 }
+</case>
+<default to="end"/>
+</switch>
+</decision>
+`;
+        this.decision = decision;
+        }
 
       //--------------------------------------------
 
@@ -722,6 +773,12 @@ docReady(function() {
          } else  if(type_of_node=="sqoop_node_create_btn"){ //TODO
             oozie_node_spawn.setSqoopNode();
             text = oozie_node_spawn.getSqoopNode(); 
+         }  else  if(type_of_node=="distcp_node_create_btn"){ //distcp
+            oozie_node_spawn.setDistcpNode();
+            text = oozie_node_spawn.getDistcpNode(); 
+         } else  if(type_of_node=="decision_node_create_btn"){ //decision
+            oozie_node_spawn.setDecisionNode();
+            text = oozie_node_spawn.getDecisionNode(); 
          } 
         el.value = text;
         el.setAttribute('readonly', '');
@@ -759,14 +816,15 @@ docReady(function() {
         <a class="active" href="#Editor">Editor</a>
         <a href="#Export" onclick="exportXMLToFile()">Export Workflow</a>
         <a href="#about"  onclick="aboutOLE()">About</a>
-        <a href="#about" ></a>
-        <a href="#about" ></a>
-        <a href="#about" ></a>
+        <a  target="_blank" rel="noopener noreferrer" href="https://oozie.apache.org/docs/4.3.1/">Oozie Doc</a>
+        <a href="#about" >|</a>
         <a href="#about"  id= "email_node_create_btn"onclick="copyToClipboard('email','email_node_create_btn')">Email Node</a>
         <a href="#about"  id= "hive_node_create_btn"onclick="copyToClipboard('hive','hive_node_create_btn')">Hive Node</a>
         <a href="#about"  id= "pig_node_create_btn"onclick="copyToClipboard('pig','pig_node_create_btn')">Pig Node</a>
         <a href="#about"  id= "shell_node_create_btn"onclick="copyToClipboard('shell','shell_node_create_btn')">Shell Node</a>
         <a href="#about"  id= "sqoop_node_create_btn"onclick="copyToClipboard('sqoop','sqoop_node_create_btn')">Sqoop Node</a>
+        <a href="#about"  id= "distcp_node_create_btn"onclick="copyToClipboard('distcp','distcp_node_create_btn')">DistCp Node</a>
+        <a href="#about"  id= "decision_node_create_btn"onclick="copyToClipboard('decision','decision_node_create_btn')">Decision Node</a>
       </div>
 
 
@@ -778,47 +836,58 @@ docReady(function() {
                 <!---------------------------------------------->
                 <!--            START TYPING XML              -->
                 <!---------------------------------------------->
+                <workflow-app
+                xmlns='uri:oozie:workflow:0.3' name='shell-wf'>
                 <start to="step_01"/>
                 <action name="step_01">
                     <ok to="step_02"/>
-                    <error to="fail_node"/>aa
+                    <error to="fail_node"/>   
                 </action>
                 <action name="step_02">
                     <fs>
                         <name-node>${nameNode}</name-node>
                         <chmod path="${hdfs_ingest_path}/*" permissions="777" dir-files="false"></chmod>
                     </fs>
-                    <ok to="step_03"/>
+                    <ok to="decision"/>
                     <error to="fail_node"/>
                 </action>
-                <action name="step_03">
-                    <ok to="step_04"/>
-                    <error to="fail_node"/>
-                </action>
+                <decision name="decision">
+                    <switch>
+                        <case to="step_04">
+        ${fs:fileSize(secondjobOutputDir) gt 10 * GB} 
+                    </case>
+                    <case to="step_05">
+        ${fs:fileSize(secondjobOutputDir) gt 10 * GB} 
+                        </case>
+                        <default to="end"/>
+                    </switch>
+                </decision>
                 <action name="fail_node">
                     <ok to="kill"/>
                     <error to="fail_node"/>
                 </action>
                 <action name="step_04">
-                    <ok to="step_05"/>
+                    <ok to="step_06"/>
                     <error to="fail_node"/>
                 </action>
                 <action name="step_05">
+                    <ok to="step_06"/>
+                    <error to="fail_node"/>
+                </action>
+                <action name="step_06">
                     <ok to="end"/>
                     <error to="fail_node"/>
                 </action>
+                
                 <action name="end">
                     <ok to="kill"/>
                     <error to="fail_node"/>
                 </action>
-                              
-                
                 <action name="kill">
                     <ok to="kill"/>
                     <error to="fail_node"/>
                 </action>
-
-
+            </workflow-app>
             </textarea>
           </div>
   
