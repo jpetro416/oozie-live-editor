@@ -4,33 +4,33 @@ Live oozie workflow editor, real time code DAG updates
 
 ### License
 
-Apache License
-Version 2.0, January 2004
-http://www.apache.org/licenses/
+Apache License  <br />
+Version 2.0, January 2004  <br />
+http://www.apache.org/licenses/  <br />
 
 ### Project Libs
 
 This project uses:
--Go.JS
+-Go.JS <br />
 -CodeMirror
 
 ### Features:
 
--Live DAG updates while editing
--XML Syntax error highlighting
--XML Formatting (while typing)
--Export Workflow into file
--Auto paste node types
-    -Email
-    -Hive
-    -Pig
-    -Shell
-    -DistCP
-    -Decision
--Oozie Doc Link
+-Live DAG updates while editing <br />
+-XML Syntax error highlighting <br />
+-XML Formatting (while typing) <br />
+-Export Workflow into file <br />
+-Auto paste node types <br />
+    -Email <br />
+    -Hive <br />
+    -Pig <br />
+    -Shell <br />
+    -DistCP <br />
+    -Decision <br />
+-Oozie Doc Link <br />
 
 **TODO:** 
--Error node color fix (not based on 'kill' or 'fail')
+-Error node color fix (not based on 'kill' or 'fail') <br />
 -XML formatting for 'pasted' nodes
 
 
