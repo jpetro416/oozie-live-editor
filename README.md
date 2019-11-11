@@ -10,7 +10,7 @@ http://www.apache.org/licenses/  <br />
 
 ### Project Libs
 
-This project uses:
+This project uses:  <br />
 -Go.JS <br />
 -CodeMirror
 
@@ -20,16 +20,16 @@ This project uses:
 -XML Syntax error highlighting <br />
 -XML Formatting (while typing) <br />
 -Export Workflow into file <br />
--Auto paste node types <br />
-    -Email <br />
-    -Hive <br />
-    -Pig <br />
-    -Shell <br />
-    -DistCP <br />
-    -Decision <br />
--Oozie Doc Link <br />
+-Auto paste node types: <br />
+   &nbsp;&nbsp; -Email <br />
+   &nbsp;&nbsp; -Hive <br />
+   &nbsp;&nbsp; -Pig <br />
+   &nbsp;&nbsp; -Shell <br />
+   &nbsp;&nbsp; -DistCP <br />
+   &nbsp;&nbsp; -Decision <br />
+    &nbsp;&nbsp;-Oozie Doc Link <br />
 
-**TODO:** 
+**TODO:** <br />
 -Error node color fix (not based on 'kill' or 'fail') <br />
 -XML formatting for 'pasted' nodes
 
