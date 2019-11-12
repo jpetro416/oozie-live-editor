@@ -1,4 +1,4 @@
-# Ramb0t's Oozie Live Workflow Editor: 1.1.0
+# Ramb0t's Oozie Live Workflow Editor: v1.1.1
 ## Core Release
 Live oozie workflow editor, real time code DAG updates
 
@@ -19,7 +19,7 @@ This project uses:  <br />
 -Live DAG updates while editing <br />
 -XML Syntax error highlighting <br />
 -XML Formatting (while typing) <br />
--Export Workflow into file <br />
+-Export Workflow <br />
 -Auto paste node types: <br />
    &nbsp;&nbsp; -Email <br />
    &nbsp;&nbsp; -Hive <br />
@@ -27,11 +27,12 @@ This project uses:  <br />
    &nbsp;&nbsp; -Shell <br />
    &nbsp;&nbsp; -DistCP <br />
    &nbsp;&nbsp; -Decision <br />
+   &nbsp;&nbsp;-End<br />
+   &nbsp;&nbsp;-Kill<br />
     &nbsp;&nbsp;-Oozie Doc Link <br />
 
 **TODO:** <br />
 -Error node color fix (not based on 'kill' or 'fail') <br />
--XML formatting for 'pasted' nodes
 
 
 
