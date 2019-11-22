@@ -80,7 +80,7 @@
 
 #container {
     width: 100%;
-    height: 600px;
+    height: 500px;
     margin:0 auto;
     position:relative;
 
@@ -88,7 +88,7 @@
 
 #left-container, 
 #right-container {
-    height:auto;
+    height:500px; /*TODO: set back to: auto */
     position:absolute;
     top:0;
 
@@ -98,7 +98,6 @@
     width:100%;
     color:#686c70;
     text-align: left;
-   
     background-color:#fff;
     background-repeat:no-repeat;
 
@@ -108,14 +107,11 @@
     width:50%;
     color:#686c70;
     text-align: left;
- 
     background-color:#fff;
     background-repeat:no-repeat;
-
     right:0;
-
     background-position:center left;
-    border-right:1px solid #ddd;
+    /*TODO: set back to: border-right:1px solid #ddd; */
 }
 
 #right-container h4{

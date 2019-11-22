@@ -5,141 +5,25 @@
     <script src="js/codemirror.js"></script>
     <script src="js/xml.js"></script>
     <script src="js/format_code.js"></script>
-    <script src="js/go.js"></script>  
-
+    <script src="js/go.js"></script>
     <script src="js/mermaid.js"></script>
+    <script src="js/oozie_node.js"></script> 
+    <script src="js/create_default_oozie_nodes.js"></script>
     <script>mermaid.initialize({startOnLoad:true});</script>
-    <!--  DEBUG <script src="https://unpkg.com/gojs/release/go-debug.js"></script> -->
-    <!-- CSS Files -->
     <link type="text/css" href="css/base.css" rel="stylesheet" />
 
-    
-    <script>
-
-//mermaid diagrams:
-// mermaidAPI.initialize({
-//      startOnLoad:true
-//  });
-//  $(function(){
-//      const graphDefinition = 'graph TB\na-->b';
-//      const cb = function(svgGraph){
-//          console.log(svgGraph);
-//      };
-//      mermaidAPI.render('id1',graphDefinition,cb);
-//  });
-
+<script>
 //Global 
 var node_list = [];
 var flag_actions = true; 
 var allkeys = true;
 var updated_copy_of_text_area = "";
 docReady(function() {
+
+    var mermaid_diagram = new CreateMermaidDiagram();
+      // document.getElementById("mermaid_diagram_id").value=mermaid_diagram.getDiagram_txt();
     // DOM is loaded and ready for manipulation
-        function OozieNode() {  
-           this.node_id = "";  
-           this.previous_node = "";  
-           this.next_node = "";   
-           this.first_node = false;  
-           this.node_number = 0;
-           this.error_node = null;
-           this.primary_error_node = false;
-           this.decision_node = false;
-           this.decision_default_next_node = "";   
-           this.decision_case_nodes = [];
-            
-            this.getNodeID  = function() {  
-                  return this.node_id;  
-            };
-            this.getPreviousNode = function() {  
-                  return this.previous_node;  
-            };
-            this.getNextNode = function() {  
-                  return this.next_node;  
-            };
-            this.getIsFirstNode = function() {  
-                  return this.first_node;  
-            };
-        
-            this.getNodeNumber = function(){
-                return this.node_number;
-            };
-
-            this.getErrorNode = function(){
-                return this.error_node;
-            };
-
-            this.isPrimaryErrorNode = function(){
-                return this.primary_error_node;
-            };
-
-            this.isDecisionNode = function(){
-                return this.decision_node;
-            };
-
-            this.getDecisionDefaultNextNode = function(){
-                return this.decision_default_next_node;
-            };
-
-            this.getDecisionCaseNodesList = function(){
-                return this.decision_case_nodes;
-            };
-            
-             
-            this.setNodeID = function(node_id){
-                this.node_id = node_id;
-            };
-            this.setPreviousNode = function(previous_node){
-                this.previous_node = previous_node;
-            };
-            this.setNextNode = function(next_node){
-                this.next_node = next_node;
-            };
-            this.setIsFirstNode = function(first_node){
-                this.first_node = first_node;
-            };
-            
-            this.setNodeNumber = function(node_number){
-                this.node_number = node_number;
-            };
-
-            this.setErrorNode = function(error_node){
-                this.error_node = error_node;
-            };
-
-            this.setPrimaryErrorNode = function(primary_error_node){
-                this.primary_error_node = primary_error_node;
-            };
-
-            this.setDecisionNode = function(decision_node){
-                this.decision_node = decision_node;
-            };
-            this.setDecisionDefaultNextNode = function(decision_default_next_node){
-                this.decision_default_next_node = decision_default_next_node;
-            };
-            this.setDecisionCaseNodesList = function(incoming_case){
-                this.decision_case_nodes.push(incoming_case);
-            };
-            
-            
-        
-            this.printNodeInfo = function(){
-                console.log(
-                       " getNodeID: " + this.getNodeID(),
-                    "\n getIsFirstNode: " + this.getIsFirstNode(),
-                    "\n getPreviousNode: " + this.getPreviousNode(),
-                    "\n getNextNode: " + this.getNextNode(),
-                    "\n getNodeNumber: " + this.getNodeNumber(),
-                    "\n getErrorNode: " + this.getErrorNode(),
-                    "\n isPrimaryErrorNode: " + this.isPrimaryErrorNode(),
-                    "\n isDecisionNode: " + this.isDecisionNode(),
-                    "\n getDecisionDefaultNextNode: " + this.getDecisionDefaultNextNode(),
-                    "\n getDecisionCaseNodesList: " + this.getDecisionCaseNodesList().length
-                    );
-                for(let i=0; i < this.getDecisionCaseNodesList().length; i++){
-                    console.log("Decision Node #"+i + ": " + this.decision_case_nodes[i]);
-                }
-            };
-        } //----------------------------------------------------End class OozieNode
+      
 
         //----------------------------------------------------
         //init the DAG graph
@@ -411,17 +295,6 @@ docReady(function() {
         });   
 
 
-        function replaceTextAreaText(incoming_txt){
-
-        }
-
-        //location points TODO
-        function showPoint(loc) {
-            var docloc = diagram.transformDocToView(loc);
-            var elt = document.getElementById("Message1");
-            elt.textContent = "Selected node location,\ndocument coordinates: " + loc.x.toFixed(2) + " " + loc.y.toFixed(2) +
-                            "\nview coordinates: " + docloc.x.toFixed(2) + " " + docloc.y.toFixed(2);
-        }
 
         //random color generator
         function randomDAGColor () {
@@ -544,249 +417,17 @@ docReady(function() {
                 el.fireEvent('on'+e.eventType, e);
             }
             }
-       //-------------------------------------------------------------
-       //Auto Create Nodes
-       //-------------------------------------------------------------
-        function CreateOozieNodes(){
-            this.email;
-            this.shell;
-            this.hive;
-            this.pig;
-            this.sqoop;
-            this.distcp;
-            this.decision;
-            this.end_node;
-            this.kill_node;
-
-            this.getEmailNode = function(){
-                return this.email;
-            };
-
-
-            this.getShellNode = function(){
-                return this.shell;
-            };
-
-            
-            this.getHiveNode = function(){
-                return this.hive;
-            };
-
-            
-            this.getPigNode = function(){
-                return this.pig;
-            };
-
-
-            this.getSqoopNode = function(){
-                return this.sqoop;
-            };
-
-            this.getDistcpNode = function(){
-                return this.distcp;
-            };
-
-            this.getDecisionNode = function(){
-                return this.decision;
-            }
-            this.getEndNode = function(){
-                return this.end_node;
-            }
-            this.getKillNode = function(){
-                return this.kill_node;
-            }
-      //--------------------------------------------
-      this.setEmailNode = function(){ //email
-                var email = `
-<action name=\"[EMAIL-NODE]\">
-    <email xmlns=\"uri:oozie:email-action:0.2\">
-        <to>[COMMA-SEPARATED-TO-ADDRESSES]</to>
-        <cc>[COMMA-SEPARATED-CC-ADDRESSES]</cc> 
-        <bcc>[COMMA-SEPARATED-BCC-ADDRESSES]</bcc> 
-        <subject>[SUBJECT]</subject>
-        <body>[BODY]</body>
-    <content_type>[CONTENT-TYPE]</content_type> 
-    <attachment>[COMMA-SEPARATED-HDFS-FILE-PATHS]</attachment> 
-    </email>
-    <ok to=\"[NODE-NAME]\"/>
-    <error to="[NODE-NAME]"/>
-</action>
-                `;
-                this.email = email;
-            };
-
-            this.setShellNode = function(){ //shell
-             var shell =  `
-<action name="shell1">
-   <shell xmlns="uri:oozie:shell-action:0.1">
-      <job-tracker>\${jobTracker}</job-tracker>
-      <name-node>\${nameNode}</name-node>
-      <configuration>
-         <property>
-            <name>mapred.job.queue.name</name>
-            <value>\${queueName}</value>
-         </property>
-      </configuration>
-      <exec>\${EXEC}</exec>
-      <argument>A</argument>
-      <argument>B</argument>
-      <file>\${EXEC}#\${EXEC}</file>
-      <!--Copy the executable to compute node's current working directory -->
-   </shell>
-   <ok to="end" />
-   <error to="fail" />
-</action>
-            `;
-            this.shell = shell;
-            };
-
-            this.setHiveNode = function(){ //hive
-             var hive = 
-            `
-<action name="myfirsthivejob">
-   <hive xmlns="uri:oozie:hive-action:0.2">
-      <job-tracker>foo:8021</job-tracker>
-      <name-node>bar:8020</name-node>
-      <prepare>
-         <delete path="\${jobOutput}" />
-      </prepare>
-      <configuration>
-         <property>
-            <name>mapred.compress.map.output</name>
-            <value>true</value>
-         </property>
-      </configuration>
-      <!-- <script>myscript.q</script> UNCOMMENT-->
-      <param>InputDir=/home/tucu/input-data</param>
-      <param>OutputDir=\${jobOutput}</param>
-   </hive>
-   <ok to="myotherjob" />
-   <error to="errorcleanup" />
-</action>
-            `;
-            this.hive = hive;
-        };
-        this.setPigNode = function(){ //pig
-             var pig = 
-            `
-<action name="myfirstpigjob">
-   <pig>
-      <job-tracker>foo:9001</job-tracker>
-      <name-node>bar:9000</name-node>
-      <prepare>
-         <delete path="\${jobOutput}" />
-      </prepare>
-      <configuration>
-         <property>
-            <name>mapred.compress.map.output</name>
-            <value>true</value>
-         </property>
-         <property>
-            <name>oozie.action.external.stats.write</name>
-            <value>true</value>
-         </property>
-      </configuration>
-      <!--  <script>/mypigscript.pig</script> UNCOMMENT-->
-      <argument>-param</argument>
-      <argument>INPUT=\${inputDir}</argument>
-      <argument>-param</argument>
-      <argument>OUTPUT=\${outputDir}/pig-output3</argument>
-   </pig>
-   <ok to="myotherjob" />
-   <error to="errorcleanup" />
-</action>
-
-            `;
-            this.pig = pig;
-        };
-        this.setSqoopNode = function(){ //sqoop
-             var sqoop = 
-            `
-<action name="myfirsthivejob">
-   <sqoop xmlns="uri:oozie:sqoop-action:0.2">
-      <job-tracker>foo:8021</job-tracker>
-      <name-node>bar:8020</name-node>
-      <prepare>
-         <delete path="\${jobOutput}" />
-      </prepare>
-      <configuration>
-         <property>
-            <name>mapred.compress.map.output</name>
-            <value>true</value>
-         </property>
-      </configuration>
-      <command>import  --connect jdbc:hsqldb:file:db.hsqldb --table TT --target-dir hdfs://localhost:8020/user/tucu/foo -m 1</command>
-   </sqoop>
-   <ok to="myotherjob" />
-   <error to="errorcleanup" />
-</action>
-COPY TO CLIPBOARD	 SELECT ALL
-© FreeFormatter.com - FREEFORMATTER is a d/b/a of 10174785 Canada Inc. - Copyright Notice - Priv
-            `;
-            this.sqoop = sqoop;
-        };
-        this.setDistcpNode = function(){ //distcp
-            var distcp =
-            `
- <action name="[DistCP-Node]">
-   <distcp xmlns="uri:oozie:distcp-action:0.2">
-      <job-tracker>\${jobTracker}</job-tracker>
-      <name-node>\${nameNode1}</name-node>
-      <arg>\${nameNode1}/path/to/input.txt</arg>
-      <arg>\${nameNode2}/path/to/output.txt</arg>
-   </distcp>
-   <ok to="[NODE-NAME]" />
-   <error to="[NODE-NAME]" />
-</action>
-            `;
-            this.distcp = distcp;
-        }
-
-
-        this.setDecisionNode = function(){ //decision
-            var decision = 
-` 
-<decision name="decision_node">
-   <switch>
-      <case to="reconsolidatejob">\${fs:fileSize(secondjobOutputDir) gt 10 * GB}</case>
-      <case to="rexpandjob">\${fs:fileSize(secondjobOutputDir) lt 100 * MB}</case>
-      <case to="recomputejob">\${ hadoop:counters('secondjob')[RECORDS][REDUCE_OUT] lt 1000000 }</case>
-      <default to="end" />
-   </switch>
-</decision>
-`;
-        this.decision = decision;
-        }
-
-    this.setEndNode = function(){
-        var end_node =
-        `
-<action name="end">
-    <ok to="kill"/>
-    <error to="fail_node"/>
-</action>
-        `;
-        this.end_node = end_node;
-    }
-    this.setKillNode = function(){
-        var kill_node =
-        `
-<action name="kill">
-    <ok to="kill"/>
-    <error to="kill"/>
-</action>
-        `;
-        this.kill_node = kill_node;
-    }
-
+       
       //--------------------------------------------
 
 
         
-    }
+    
        //-------------------------------------------------------------
        //Mermaid Create Diagram For v1.2
        //-------------------------------------------------------------
+
+
        function CreateMermaidDiagram(){
             this.diagram_txt;
 
@@ -796,21 +437,26 @@ COPY TO CLIPBOARD	 SELECT ALL
             };
 
             //setters:
-            this.setDiagram_txt = function(){
+            this.setDiagram_txt = function(node){
+                var first_node = "starting node 1";
                 var diagram_txt_tmp = `
                 stateDiagram
-                [*] --> Still
-                Still --> [*]
+                [*] --> `+first_node+`
+                `+first_node+` --> [*]
             
-                Still --> Moving
-                Moving --> Still
+                `+first_node+` --> Moving
+                Moving -->  `+first_node+`
                 Moving --> Crash
-                Crash --> [*]
+                 --> [*]
                 `;
+                 //this.diagram_txt = diagram_txt_tmp;
+                 this.diagram_txt = ` stateDiagram
+                [*] -->`
             };
 
-       }
 
+       }
+    
 
         // ================================================================================
         // Clipboard
@@ -932,18 +578,14 @@ COPY TO CLIPBOARD	 SELECT ALL
                                 
                 
  <!-- new mermaid diagram -->
-
       <hr>
-      <div class="mermaid">
-        stateDiagram
-        [*] --> Still
-        Still --> [*]
-    
-        Still --> Moving
-        Moving --> Still
-        Moving --> Crash
-        Crash --> [*]
+      <center>
+      <div class="mermaid" id="mermaid_diagram_id">
+            stateDiagram
+            [*] --> s1
+            s1 --> [*]
         </div>
+        </center>
 
   <script>
     mermaid.initialize({
