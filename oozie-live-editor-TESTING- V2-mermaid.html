@@ -501,12 +501,12 @@ docReady(function() {
       <center>
       <div class="mermaid" id="mermaid_diagram_id">
             stateDiagram
-            [*] --> Still
-            Still --> [*]
-            Still --> Moving
-            Moving --> Still
-            Moving --> Crash
-            Moving --> New
+            [*] --> Node1
+            Node1 --> [*]
+            Node1 --> DecisionNode
+            DecisionNode --> Node1
+            DecisionNode --> Crash
+            DecisionNode --> New
             Crash --> [*]
 
 
