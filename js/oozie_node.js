@@ -64,6 +64,7 @@ function OozieNode() {
      };
      this.setNextNode = function(next_node){
          this.next_node = next_node.replace(/\s+/g, '_');
+         this.setDefaultNodeStructure(); //set a new node structure whenever a next node is set
      };
      this.setIsFirstNode = function(first_node){
          this.first_node = first_node; 
@@ -93,7 +94,7 @@ function OozieNode() {
      
      //create a default pathing structure for mermaid js diagrams
      this.setDefaultNodeStructure = function(){
-        this.default_node_structure = this.getNodeID() + "-->" + this.getNextNode();
+        this.default_node_structure = this.getNodeID() + " --> " + this.getNextNode();
      };
      this.setFirstNodeStructure = function(){
         this.first_node_structure = "[*] --> " + this.getNodeID();
