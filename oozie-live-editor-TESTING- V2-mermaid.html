@@ -233,8 +233,42 @@ docReady(function() {
                 //---------------------
                 var mermaid_diagram = new CreateMermaidDiagram();
                 mermaid_diagram.setDiagram_txt(node_list);
-                document.getElementById("mermaid_diagram_id").innerText=mermaid_diagram.getDiagram_txt();
                 
+                //----------------------------------
+                //ReRender Mermaid
+                //---------------------------------- 
+                
+                 var needsUniqueId = "render" + (Math.floor(Math.random() * 10000)).toString(); //should be 10K attempts before repeat user finger stops working before then hopefully
+            //     var callback = function() {
+            //         document.getElementById("mermaid_diagram_id").innerText=mermaid_diagram.getDiagram_txt();
+            //     };
+                var test_txt_try = 
+            "stateDiagram\
+            [*] --> Hey\
+            Hey --> [*]\
+            Hey --> Its\
+            Its --> Bug\
+            Its --> A\
+            Bug --> [*]";
+            //     //.mermaidAPI.render(needsUniqueId, mermaid_diagram.getDiagram_txt(), callback);
+            //     mermaid.mermaidAPI.render(needsUniqueId, test_txt_try, callback);
+            //     try {
+                    
+            // const graphDefinition = 'graph TB\na-->b';
+            // const cb = function(svgGraph){
+            //     console.log(svgGraph);
+            // };
+            // mermaid.mermaidAPI.render(needsUniqueId,graphDefinition,cb);
+            //         //mermaid.render( mermaid_diagram.getDiagram_txt());
+            //     } catch (err) {
+            //         console.error(err);
+            //     }
+
+                //----------------------------------
+                //----------------------------------
+
+
+
 
 
                 document.getElementById("myDiagramDiv").div = null;
@@ -537,8 +571,7 @@ docReady(function() {
       sequence: { actorMargin: 50 },
       // sequenceDiagram: { actorMargin: 300 } // deprecated
     });
-  </script>
-  <script>
+
     function ganttTestClick(a, b, c){
       console.log("a:", a)
       console.log("b:", b)
@@ -552,8 +585,7 @@ docReady(function() {
         document.querySelector('body').style.backgroundColor = originalBgColor
       }, 100)
     }
-  </script>
-  <script>
+  
      const testLineEndings = (test, input) => {
        try {
          mermaid.render(test, input, () => {});
