@@ -20,8 +20,9 @@ var allkeys = true;
 var updated_copy_of_text_area = "";
 docReady(function() {
 
-    var mermaid_diagram = new CreateMermaidDiagram();
-      // document.getElementById("mermaid_diagram_id").value=mermaid_diagram.getDiagram_txt();
+     var mermaid_diagram = new CreateMermaidDiagram();
+     mermaid_diagram.setDiagram_txt();
+     document.getElementById("mermaid_diagram_id").innerText=mermaid_diagram.getDiagram_txt();
     // DOM is loaded and ready for manipulation
       
 
@@ -437,21 +438,37 @@ docReady(function() {
             };
 
             //setters:
-            this.setDiagram_txt = function(node){
-                var first_node = "starting node 1";
-                var diagram_txt_tmp = `
-                stateDiagram
-                [*] --> `+first_node+`
-                `+first_node+` --> [*]
+            this.setDiagram_txt = function(node_bean){
+                if(node_bean!=null){
+                var node_name = node_bean.getNodeID();
+                var linked_node_name = node_bean.getNextNode();
+                var first_node = "NODE 1";
+                first_node = first_node.replace(/\s+/g, '_'); //change spaces to underscores... mermaid doesn't like spaces...
+                var diagram_txt_tmp = 
+           
+            "stateDiagram\
+            [*] --> "+first_node+" \
+            Still --> [*] \
+            Still --> Moving\
+            Moving --> Still\
+            Moving --> Crash\
+            Moving --> New\
+            Crash --> [*]";
+            this.diagram_txt = diagram_txt_tmp;
+                }else{ //on node error... show a funny demo
+                    var diagram_txt_tmp = 
+            "stateDiagram\
+            [*] --> Hey\
+            Hey --> [*]\
+            Hey --> You\
+            You --> Crash\
+            You --> Have_An_error\
+            Crash --> [*]";
+            this.diagram_txt = diagram_txt_tmp;
+                }
+               
             
-                `+first_node+` --> Moving
-                Moving -->  `+first_node+`
-                Moving --> Crash
-                 --> [*]
-                `;
-                 //this.diagram_txt = diagram_txt_tmp;
-                 this.diagram_txt = ` stateDiagram
-                [*] -->`
+
             };
 
 
@@ -529,7 +546,7 @@ docReady(function() {
  
 
 <!---prod: <body id = "main_section">   -->
-   <!-- for testing--> <body id = "notcolored">  
+   <!-- for testing--> <body id = "main_section">  
     <div class="topnav"> 
         <a class="active" href="#Editor">Editor</a>
         <a href="#Export" onclick="exportXMLToFile()">Export Workflow</a>
@@ -566,7 +583,18 @@ docReady(function() {
           </div>
   
     <div id="right-container">
-     <div id="myDiagramDiv" style="border: solid 1px black; width:900px; height:900px;"></div> <!--  Deprecated diagram-->
+         <!-- new mermaid diagram -->
+      <hr>
+      <center>
+      <div class="mermaid" id="mermaid_diagram_id">
+     
+
+
+
+
+        </div>
+        </center>
+    
 
     
   
@@ -576,16 +604,8 @@ docReady(function() {
 
             
                                 
-                
- <!-- new mermaid diagram -->
-      <hr>
-      <center>
-      <div class="mermaid" id="mermaid_diagram_id">
-            stateDiagram
-            [*] --> s1
-            s1 --> [*]
-        </div>
-        </center>
+    <div id="myDiagramDiv" style="width:900px; height:900px;"></div> <!--  Deprecated diagram  border: solid 1px black;-->       
+
 
   <script>
     mermaid.initialize({
