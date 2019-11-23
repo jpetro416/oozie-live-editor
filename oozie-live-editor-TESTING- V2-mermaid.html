@@ -9,6 +9,7 @@
     <script src="js/mermaid.js"></script>
     <script src="js/oozie_node.js"></script> 
     <script src="js/create_default_oozie_nodes.js"></script>
+    <script src="js/random_functions.js"></script>
     <script>mermaid.initialize({startOnLoad:true});</script>
     <link type="text/css" href="css/base.css" rel="stylesheet" />
 
@@ -20,9 +21,7 @@ var allkeys = true;
 var updated_copy_of_text_area = "";
 docReady(function() {
 
-     var mermaid_diagram = new CreateMermaidDiagram();
-     mermaid_diagram.setDiagram_txt();
-     document.getElementById("mermaid_diagram_id").innerText=mermaid_diagram.getDiagram_txt();
+
     // DOM is loaded and ready for manipulation
       
 
@@ -229,6 +228,15 @@ docReady(function() {
         
             function updateGraph(node_list){
 
+                //---------------------
+                //Mermaid JS
+                //---------------------
+                var mermaid_diagram = new CreateMermaidDiagram();
+                 mermaid_diagram.setDiagram_txt(node_list);
+                document.getElementById("mermaid_diagram_id").innerText=mermaid_diagram.getDiagram_txt();
+                
+
+
                 document.getElementById("myDiagramDiv").div = null;
                 myDiagram.div = null;
                 myDiagram = null;
@@ -297,129 +305,6 @@ docReady(function() {
 
 
 
-        //random color generator
-        function randomDAGColor () {
-            var rando_num = Math.floor(Math.random() * 6) + 1
-            if(rando_num == 1){
-                return "lightblue";
-            }else if(rando_num == 2){
-                return "lightgreen";
-            }else if(rando_num == 3){
-                return "orange";
-            }else if(rando_num == 4){
-                return "lightgreen";
-            }else if(rando_num == 5){
-                return "pink";
-            }else{
-                return "lightblue";
-            }
-        }
-
-        //random number generator
-        function randomIntFromInterval(min, max) { // min and max included 
-            return Math.floor(Math.random() * (max - min + 1) + min);
-        }
-
-        //logger
-        function alertOrConsole(node, flag){
-        if(flag){
-            alert(node);
-        }else{
-            console.log("----------------");
-            console.log(node);
-        }
-        }
-  
-        //save to file
-        function exportXMLToFile(){
-            var pom = document.createElement('a');
-            pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(updated_copy_of_text_area));
-            pom.setAttribute('download', "workflow.xml");
-
-            if (document.createEvent) {
-                var event = document.createEvent('MouseEvents');
-                event.initEvent('click', true, true);
-                pom.dispatchEvent(event);
-            }
-            else {
-                pom.click();
-            }
-        }
-
-            //about
-            function aboutOLE(){
-                alert("Version: 1.1.1\nSoftware Created by: Joseph Petro\nPlease visit gojs.net to purchase a license for Go.JS");
-            }
-
-            function docReady(fn) {
-                // see if DOM is already available
-                if (document.readyState === "complete" || document.readyState === "interactive") {
-                    // call on next available tick
-                    setTimeout(fn, 1);
-                } else {
-                    document.addEventListener("DOMContentLoaded", fn);
-                }
-            }
-
-            function consoleCleanup(){
-            if(console._commandLineAPI && console._commandLineAPI.clear){
-                console._commandLineAPI.clear();//clear in some safari versions
-            }else if(console._inspectorCommandLineAPI && console._inspectorCommandLineAPI.clear){
-                console._inspectorCommandLineAPI.clear();//clear in some chrome versions
-            }else if(console.clear){
-                console.clear();//clear in other chrome versions (maybe more browsers?)
-            }else{
-                console.log(Array(100).join("\n"));//print 100 newlines if nothing else works
-            }
-        }
-
-        function insertAtCursor(myField, myValue) {
-            //IE support
-            if (document.selection) {
-                myField.focus();
-                sel = document.selection.createRange();
-                sel.text = myValue;
-            }
-            // Microsoft Edge
-            else if(window.navigator.userAgent.indexOf("Edge") > -1) {
-            var startPos = myField.selectionStart; 
-            var endPos = myField.selectionEnd; 
-
-            myField.value = myField.value.substring(0, startPos)+ myValue 
-                    + myField.value.substring(endPos, myField.value.length); 
-
-            var pos = startPos + myValue.length;
-            myField.focus();
-            myField.setSelectionRange(pos, pos);
-            }
-            //MOZILLA and others
-            else if (myField.selectionStart || myField.selectionStart == '0') {
-                var startPos = myField.selectionStart;
-                var endPos = myField.selectionEnd;
-                myField.value = myField.value.substring(0, startPos)
-                    + myValue
-                    + myField.value.substring(endPos, myField.value.length);
-            } else {
-                myField.value += myValue;
-            }
-            triggerEvent(myField,'input');
-        }
-
-            function triggerEvent(el, type){
-            if ('createEvent' in document) {
-                // modern browsers, IE9+
-                var e = document.createEvent('HTMLEvents');
-                e.initEvent(type, false, true);
-                el.dispatchEvent(e);
-            } else {
-                // IE 8
-                var e = document.createEventObject();
-                e.eventType = type;
-                el.fireEvent('on'+e.eventType, e);
-            }
-            }
-       
-      //--------------------------------------------
 
 
         
@@ -438,34 +323,72 @@ docReady(function() {
             };
 
             //setters:
-            this.setDiagram_txt = function(node_bean){
+            this.setDiagram_txt = function(node_list){
+               
+                var diagram_txt_tmp = "";
+                if(node_list!=null){
+                //Add normal path data
+                for(let id = 0; id < node_list.length; id++){
+                    if(node_list[id].isPrimaryErrorNode()){ //add error node
+                    // model.addNodeData( { key: node_list[id].getNodeID(), color: "red" } );
+                    // model.addLinkData( { from: "", to: "" } ); 
+                    }else if(node_list[id].isDecisionNode()){//add decision node
+                   // model.addNodeData( { key: node_list[id].getNodeID(), color: randomDAGColor()} );
+                    for(let dn_count = 0; dn_count < node_list[id].getDecisionCaseNodesList().length; dn_count++){ //multi decision node cases
+                        var desc_node = node_list[id].getDecisionCaseNodesList();
+                        // model.addLinkData( { from: node_list[id].getNodeID(), to: desc_node[dn_count]} );
+                        //alert("Adding link from: " + node_list[id].getNodeID()+" to: " +desc_node[dn_count]);
+                    }
+                    // model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getDecisionDefaultNextNode() } );
+                    }else{//add normal node
+                    if(node_list[id].getNodeID().includes("kill") || node_list[id].getNodeID().includes("fail") ){ //quick and dirty kill and failure node highlight TODO: REAL ID kill/fail node
+                        // model.addNodeData( { key: node_list[id].getNodeID(), color: "red"} );
+                        // model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
+                    }else{ //pure normal node
+
+                        diagram_txt_tmp.concat(node_list[id].getDefaultNodeStructure());
+                        alert("Adding link: " + node_list[id].getDefaultNodeStructure());
+                    // model.addNodeData( { key: node_list[id].getNodeID(), color: randomDAGColor()} );
+                    // model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
+                    }
+                    if(node_list[id].getErrorNode()!=null){ //add normal node error link node
+                    // model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getErrorNode() } );  //add error node link
+                    }
+                 }
+                 
+                }
+            }else{
+
                 if(node_bean!=null){
                 var node_name = node_bean.getNodeID();
                 var linked_node_name = node_bean.getNextNode();
-                var first_node = "NODE 1";
-                first_node = first_node.replace(/\s+/g, '_'); //change spaces to underscores... mermaid doesn't like spaces...
-                var diagram_txt_tmp = 
-           
+                var first_node = "[*] --> FirstNode";
+                if(node_bean.getIsFirstNode()){
+                    first_node = node_bean.getFirstNodeStructure();
+                }
+                
             "stateDiagram\
             [*] --> "+first_node+" \
-            Still --> [*] \
-            Still --> Moving\
-            Moving --> Still\
-            Moving --> Crash\
-            Moving --> New\
-            Crash --> [*]";
+            " + node_bean.getDefaultNodeStructure();
             this.diagram_txt = diagram_txt_tmp;
-                }else{ //on node error... show a funny demo
-                    var diagram_txt_tmp = 
+                }
+                
+                else{ //on node error... show a funny demo
+      var diagram_txt_tmp = 
             "stateDiagram\
             [*] --> Hey\
             Hey --> [*]\
-            Hey --> You\
-            You --> Crash\
-            You --> Have_An_error\
-            Crash --> [*]";
+            Hey --> Its\
+            Its --> Bug\
+            Its --> A\
+            Bug --> [*]";
             this.diagram_txt = diagram_txt_tmp;
                 }
+
+            }
+
+
+
                
             
 
@@ -475,67 +398,6 @@ docReady(function() {
        }
     
 
-        // ================================================================================
-        // Clipboard
-        // ================================================================================
-        function copyToClipboard(text,type_of_node) {
-        var hold_base_txt = text;
-        var selected = false;
-        var el = document.createElement('textarea');      // Create temp element off-screen to hold text.
-        var oozie_node_spawn    = new CreateOozieNodes();
-        if(type_of_node=="email_node_create_btn"){
-            oozie_node_spawn.setEmailNode();
-            text = oozie_node_spawn.getEmailNode(); 
-         }else  if(type_of_node=="shell_node_create_btn"){ //TODO
-            oozie_node_spawn.setShellNode();
-            text = oozie_node_spawn.getShellNode(); 
-         } else  if(type_of_node=="hive_node_create_btn"){ //TODO
-            oozie_node_spawn.setHiveNode();
-            text = oozie_node_spawn.getHiveNode(); 
-         } 
-         else  if(type_of_node=="pig_node_create_btn"){ //TODO
-            oozie_node_spawn.setPigNode();
-            text = oozie_node_spawn.getPigNode(); 
-         } else  if(type_of_node=="sqoop_node_create_btn"){ //TODO
-            oozie_node_spawn.setSqoopNode();
-            text = oozie_node_spawn.getSqoopNode(); 
-         }  else  if(type_of_node=="distcp_node_create_btn"){ //distcp
-            oozie_node_spawn.setDistcpNode();
-            text = oozie_node_spawn.getDistcpNode(); 
-         } else  if(type_of_node=="decision_node_create_btn"){ //decision
-            oozie_node_spawn.setDecisionNode();
-            text = oozie_node_spawn.getDecisionNode(); 
-         } 
-         else  if(type_of_node=="end_node_create_btn"){ //end
-            oozie_node_spawn.setEndNode();
-            text = oozie_node_spawn.getEndNode(); 
-         } 
-         else  if(type_of_node=="kill_node_create_btn"){ //kill
-            oozie_node_spawn.setKillNode();
-            text = oozie_node_spawn.getKillNode(); 
-         } 
-        el.value = text;
-        el.setAttribute('readonly', '');
-        el.style.position = 'absolute';
-        el.style.left = '-9999px';
-        document.body.appendChild(el);
-        if (document.getSelection().rangeCount > 0) {
-            selected = document.getSelection().getRangeAt(0)
-        }
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
-        if (selected) {
-            document.getSelection().removeAllRanges();
-            document.getSelection().addRange(selected);
-        }
-         // give some visual feadback
-        var toaster = document.getElementById("snackbar");
-        toaster.textContent = hold_base_txt +" node copied to clipboard";
-        toaster.className = "show";
-        setTimeout(function(){ toaster.className = toaster.className.replace("show", ""); }, 5000);
-    
-    };
 
         
           </script>
@@ -578,6 +440,27 @@ docReady(function() {
                 <!---------------------------------------------->
                 <!--            START TYPING XML              -->
                 <!---------------------------------------------->
+            <action name="myfirsthivejob">
+                <hive xmlns="uri:oozie:hive-action:0.2">
+                <job-tracker>foo:8021</job-tracker>
+                <name-node>bar:8020</name-node>
+                <prepare>
+                    <delete path="${jobOutput}" />
+                </prepare>
+                <configuration>
+                    <property>
+                        <name>mapred.compress.map.output</name>
+                        <value>true</value>
+                    </property>
+                </configuration>
+                <!-- <script>myscript.q</script> UNCOMMENT-->
+                <param>InputDir=/home/tucu/input-data</param>
+                <param>OutputDir=${jobOutput}</param>
+                </hive>
+                <ok to="myotherjob" />
+                <error to="errorcleanup" />
+                </action>
+                        
             </workflow-app>
             </textarea>
           </div>
