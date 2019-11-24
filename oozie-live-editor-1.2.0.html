@@ -34,17 +34,11 @@ docReady(function() { // DOM is loaded and ready for manipulation
             });    
             //save text before edits
             updated_copy_of_text_area = code_mirror_text_area.getValue();
-            // console.log(code_mirror_text_area.getTextArea().value);
             //----------------------------------------------------
             //On key update text and graph
             //----------------------------------------------------
             document.body.onkeyup = function(event) {
             event.preventDefault();
-            // if (event.keyCode === 13) { //enter key only // alert("Enter key pressed");      
-            
-            //autoFillOozie(event, code_mirror_text_area); //auto fill node info
-
-
             if (allkeys) {  
                   //prevent user from blowing up graph
                   if(event.keyCode == 219 || event.keyCode == 221){
@@ -145,34 +139,6 @@ docReady(function() { // DOM is loaded and ready for manipulation
                       continue;
                     } 
                   }
- 
-                    //TODO: PRIMARY ERROR NODES!
-                    //actual error node being referenced by other nodes
-                    //  if(oozie_node.getErrorNode() != null && arrayOfLines[i].includes("action name=")  && arrayOfLines[i].includes(oozie_node.getErrorNode())){
-                    //     oozie_node.setPrimaryErrorNode(true);
-                    //    // alert("Comparing: "  + oozie_node.getErrorNode() + " |  to: " +arrayOfLines[i]);
-                    // }
-
-                    //actual error node being referenced by other nodes
-                //     if(arrayOfLines[i].includes("action name=")){
-                //     for(let err_id = 0; err_id < all_error_nodes_foud.length; err_id++){ 
-                //         if(arrayOfLines[i].includes(all_error_nodes_foud[err_id]) && all_error_nodes_foud[err_id].includes("kill") == false){
-                //         oozie_node.setPrimaryErrorNode(true);
-                //         //alert("Comparing: "  + oozie_node.getErrorNode() + " |  to: " +arrayOfLines[i]);
-                //     }
-                //     }
-                // }
-            
-
-                    //check nodes for error node 
-                    // if(arrayOfLines[i].includes("action name=") && node_list[id].getErrorNode()){
-                    //     for(let id = 0; id < node_list.length; id++){
-                    //       //  alert("Comparing: "  + oozie_node.getErrorNode() + " |  to: " +arrayOfLines[i]);
-                    //     if(arrayOfLines[i].includes(node_list[id].getErrorNode())){ //add error node
-                    //        // oozie_node.setPrimaryErrorNode(true);
-                    //     }
-                    //  }
-                    // } 
         
                     if(node_name_parsed.includes("action")){  //we found an action node
                     var action_node_name = xml.documentElement.getAttribute("name");
@@ -237,8 +203,6 @@ docReady(function() { // DOM is loaded and ready for manipulation
        //-------------------------------------------------------------
        //Mermaid Create Diagram For v1.2
        //-------------------------------------------------------------
-
-
        function CreateMermaidDiagram(){
             this.diagram_txt;
 
@@ -252,35 +216,25 @@ docReady(function() { // DOM is loaded and ready for manipulation
                 //node_list = null;
                 console.log("--------------------------------")
                 var diagram_txt_tmp =  "stateDiagram ";
-                if(node_list!=null){
+                if(node_list!=null || node_list[0].getNodeID() == null){
                 //Add normal path data
-                for(let id = 0; id < node_list.length; id++){
-                    if(node_list[id].isPrimaryErrorNode()){ //add primary error node  TODO: Deprecate?
-                    // model.addNodeData( { key: node_list[id].getNodeID(), color: "red" } );
-                    // model.addLinkData( { from: "", to: "" } ); 
-                    }else if(node_list[id].isDecisionNode()){//add decision node
-                   // model.addNodeData( { key: node_list[id].getNodeID(), color: randomDAGColor()} );
+                for(let id = 0; id < node_list.length; id++){                
+                  if(node_list[id].isDecisionNode()){//add decision node
                     for(let dn_count = 0; dn_count < node_list[id].getDecisionCaseNodesList().length; dn_count++){ //multi decision node cases
                         var desc_node = node_list[id].getDecisionCaseNodesList();
-                        // model.addLinkData( { from: node_list[id].getNodeID(), to: desc_node[dn_count]} );
-                        //alert("Adding link from: " + node_list[id].getNodeID()+" to: " +desc_node[dn_count]);
+                        diagram_txt_tmp +=  node_list[id].getNodeID() + " --> " + desc_node[dn_count] + " "; //space neeeded
                     }
-                    // model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getDecisionDefaultNextNode() } );
+                    diagram_txt_tmp +=   node_list[id].getNodeID() + " --> " + node_list[id].getDecisionDefaultNextNode().replace(/\s+/g, '_') + " ";
                     }else{//add normal node
-                    if(node_list[id].getNodeID().includes("kill") || node_list[id].getNodeID().includes("fail") ){ //quick and dirty kill and failure node highlight TODO: REAL ID kill/fail node
+                    if(node_list[id].getNodeID().includes("kill") || node_list[id].getNodeID().includes("fail") ){ //worked on go.js... feature is lacking TODO: kill node colors
                         // model.addNodeData( { key: node_list[id].getNodeID(), color: "red"} );
-                        // model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
                     }else{ //pure normal node
 
                         diagram_txt_tmp += node_list[id].getDefaultNodeStructure();
-                        //console.log("diagram_txt_tmp: " + diagram_txt_tmp);
                         console.log(node_list[id].getDefaultNodeStructure());
-                        //console.log("Adding link from node: " + node_list[id].getNodeID() +"    Link:| "+ node_list[id].getDefaultNodeStructure());
-                    // model.addNodeData( { key: node_list[id].getNodeID(), color: randomDAGColor()} );
-                    // model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
                     }
                     if(node_list[id].getErrorNode()!=null){ //add normal node error link node
-                      diagram_txt_tmp += node_list[id].getErrorNodeStructure();
+                        diagram_txt_tmp += node_list[id].getErrorNodeStructure();
                     }
                  }
                  
@@ -289,23 +243,10 @@ docReady(function() { // DOM is loaded and ready for manipulation
                 console.log(diagram_txt_tmp);
                 this.diagram_txt = diagram_txt_tmp;
                 console.log("--------------------------------")
-            }else{
+            }else{  //on node error... show a funny demo
 
-            //     if(node_bean!=null){
-            //     var node_name = node_bean.getNodeID();
-            //     var linked_node_name = node_bean.getNextNode();
-            //     var first_node = "[*] --> FirstNode";
-            //     if(node_bean.getIsFirstNode()){
-            //         first_node = node_bean.getFirstNodeStructure();
-            //     }
-                
-            // "stateDiagram\
-            // [*] --> "+first_node+" \
-            // " + node_bean.getDefaultNodeStructure();
-            // this.diagram_txt = diagram_txt_tmp;
-              // }
-                
-                // else{ //on node error... show a funny demo
+         
+              console.log("!!!!!!!!!!!!!!-----Node List Empty Mermaid String-------!!!!!!!!!!!!!!!")
       var diagram_txt_tmp = 
             "stateDiagram\
             [*] --> Hey\
@@ -318,21 +259,9 @@ docReady(function() { // DOM is loaded and ready for manipulation
               //  }
 
             }
-
-
-
-               
-            
-
-            };
-
-
+         };
        }
-    
-
-
-        
-          </script>
+      </script>
 </head>
 
  
@@ -356,7 +285,8 @@ docReady(function() { // DOM is loaded and ready for manipulation
         <a href="#about"  id= "decision_node_create_btn"onclick="copyToClipboard('decision','decision_node_create_btn')">Decision Node</a>
         <a href="#about" >|</a>
         <a href="#about"  id= "end_node_create_btn"onclick="copyToClipboard('end','end_node_create_btn')">End Node</a>
-        <a href="#about"  id= "kill_node_create_btn"onclick="copyToClipboard('kill','kill_node_create_btn')">Kill Node</a>
+   
+
       </div>
 
 
@@ -366,58 +296,13 @@ docReady(function() { // DOM is loaded and ready for manipulation
             <!-----------XML EDITOR START------------------->
             <textarea id="xml_text_editor">
           
-                <workflow-app
-                xmlns='uri:oozie:workflow:0.3' name='shell-wf'>
-                <start to="start_node"/>
-                <!---------------------------------------------->
-                <!--            START TYPING XML              -->
-                <!---------------------------------------------->
-            	<action name="node1">
-                        <hive
-                            xmlns="uri:oozie:hive-action:0.2">
-                            <job-tracker>foo:8021</job-tracker>
-                            <name-node>bar:8020</name-node>
-                            <prepare>
-                                <delete path="${jobOutput}" />
-                            </prepare>  
-                            <configuration>
-                                <property>
-                                    <name>mapred.compress.map.output</name>
-                                    <value>true</value>
-                                </property>
-                            </configuration>
-                            <!-- <script>myscript.q</script> UNCOMMENT-->
-                            <param>InputDir=/home/tucu/input-data</param> 
-                            <param>OutputDir=${jobOutput}</param>
-                        </hive>
-                        <ok to="node2" />
-                        <error to="errorcleanup" />
-                    </action>
-                    <action name="node2">
-                        <sqoop
-                            xmlns="uri:oozie:sqoop-action:0.2">
-                            <job-tracker>foo:8021</job-tracker>
-                            <name-node>bar:8020</name-node>
-                            <prepare>
-                                <delete path="${jobOutput}" />
-                            </prepare>
-                            <configuration>
-                                <property>
-                                    <name>mapred.compress.map.output</name>
-                                    <value>true</value>
-                                </property>
-                            </configuration>
-                            <command>import  --connect jdbc:hsqldb:file:db.hsqldb --table TT --target-dir hdfs://localhost:8020/user/tucu/foo -m 1</command>
-                        </sqoop>
-                        <ok to="node3" />
-                        <error to="errorcleanup" />
-                    </action>
-                    <action name="errorcleanup">
-                        <ok to="kill"/>
-                        <error to="kill"/>
-                    </action>
-                    
-                        
+              <workflow-app
+              xmlns='uri:oozie:workflow:0.3' name='shell-wf'>
+              <start to="start_node"/>
+              <!---------------------------------------------->
+              <!--            START TYPING XML              -->
+              <!---------------------------------------------->
+     
             </workflow-app>
             </textarea>
           </div>
@@ -454,9 +339,10 @@ docReady(function() { // DOM is loaded and ready for manipulation
 
 
   <script>
-              mermaid.initialize({
+    mermaid.initialize({
       // theme: 'forest', //  haaaa noooo! lol
       // themeCSS: '.node rect { fill: red; }',
+      useMaxWidth:false,
       logLevel: 3,
       flowchart: { curve: 'basis' },
       gantt: { axisFormat: '%m/%d/%Y' },

@@ -52,7 +52,7 @@
   //--------------------------------------------
   this.setEmailNode = function(){ //email
             var email = `
-<action name=\"[EMAIL-NODE]\">
+<action name=\"Email_Node\">
 <email xmlns=\"uri:oozie:email-action:0.2\">
     <to>[COMMA-SEPARATED-TO-ADDRESSES]</to>
     <cc>[COMMA-SEPARATED-CC-ADDRESSES]</cc> 
@@ -62,8 +62,8 @@
 <content_type>[CONTENT-TYPE]</content_type> 
 <attachment>[COMMA-SEPARATED-HDFS-FILE-PATHS]</attachment> 
 </email>
-<ok to=\"[NODE-NAME]\"/>
-<error to="[NODE-NAME]"/>
+<ok to=\"Next_Node\"/>
+<error to="fail"/>
 </action>
             `;
             this.email = email;

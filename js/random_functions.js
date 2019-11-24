@@ -51,7 +51,7 @@
 
             //about
             function aboutOLE(){
-                alert("Version: 1.1.1\nSoftware Created by: Joseph Petro\nPlease visit gojs.net to purchase a license for Go.JS");
+                alert("Version: 1.2.0\nSoftware Created by: Joseph Petro");
             }
 
             function docReady(fn) {

@@ -93,7 +93,7 @@ function OozieNode() {
      };
 
      this.setDecisionNode = function(decision_node){
-         this.decision_node = decision_node.replace(/\s+/g, '_');
+         this.decision_node = decision_node;
      };
      this.setDecisionDefaultNextNode = function(decision_default_next_node){
          this.decision_default_next_node = decision_default_next_node.replace(/\s+/g, '_');
@@ -112,6 +112,7 @@ function OozieNode() {
      this.setErrorNodeStructure = function(){
          this.error_node_structure = this.getNodeID() + " --> " + this.getErrorNode() + " ";//space needed
      }
+     
  
      this.printNodeInfo = function(){
          console.log(

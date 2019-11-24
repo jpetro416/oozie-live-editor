@@ -1,0 +1,97 @@
+
+<action name="hive_job_1">
+<hive xmlns="uri:oozie:hive-action:0.2">
+  <job-tracker>foo:8021</job-tracker>
+  <name-node>bar:8020</name-node>
+  <prepare>
+     <delete path="${jobOutput}" />
+  </prepare>
+  <configuration>
+     <property>
+        <name>mapred.compress.map.output</name>
+        <value>true</value>
+     </property>
+  </configuration>
+  <!-- <script>myscript.q</script> UNCOMMENT-->
+  <param>InputDir=/home/tucu/input-data</param>
+  <param>OutputDir=${jobOutput}</param>
+</hive>
+<ok to="shell_script" />
+<error to="kill" />
+</action>
+        
+  
+<action name="shell_script">
+<shell xmlns="uri:oozie:shell-action:0.1">
+  <job-tracker>${jobTracker}</job-tracker>
+  <name-node>${nameNode}</name-node>
+  <configuration>
+     <property>
+        <name>mapred.job.queue.name</name>
+        <value>${queueName}</value>
+     </property>
+  </configuration>
+  <exec>${EXEC}</exec>
+  <argument>A</argument>
+  <argument>B</argument>
+  <file>${EXEC}#${EXEC}</file>
+  <!--Copy the executable to compute node's current working directory -->
+</shell>
+<ok to="sqoop_load" />
+<error to="kill" />
+</action>
+  
+<action name="sqoop_load">
+<sqoop xmlns="uri:oozie:sqoop-action:0.2">
+  <job-tracker>foo:8021</job-tracker>
+  <name-node>bar:8020</name-node>
+  <prepare>
+     <delete path="${jobOutput}" />
+  </prepare>
+  <configuration>
+     <property>
+        <name>mapred.compress.map.output</name>
+        <value>true</value>
+     </property>
+  </configuration>
+  <command>import  --connect jdbc:hsqldb:file:db.hsqldb --table TT --target-dir hdfs://localhost:8020/user/tucu/foo -m 1</command>
+</sqoop>
+<ok to="decision_node" />
+<error to="kill" />
+</action>
+
+  
+<decision name="decision_node">
+<switch>
+  <case to="Email_Node_Pass">${fs:fileSize(secondjobOutputDir) gt 10 * GB}</case>
+  <default to="Email_Node_Fail" />
+</switch>
+</decision>
+
+<action name="Email_Node_Pass">
+<email xmlns="uri:oozie:email-action:0.2">
+    <to>[COMMA-SEPARATED-TO-ADDRESSES]</to>
+    <cc>[COMMA-SEPARATED-CC-ADDRESSES]</cc> 
+    <bcc>[COMMA-SEPARATED-BCC-ADDRESSES]</bcc> 
+    <subject>[SUBJECT]</subject>
+    <body>[BODY]</body>
+<content_type>[CONTENT-TYPE]</content_type> 
+<attachment>[COMMA-SEPARATED-HDFS-FILE-PATHS]</attachment> 
+</email>
+<ok to="end"/>
+<error to="kill"/>
+</action>
+  <action name="Email_Node_Fail">
+<email xmlns="uri:oozie:email-action:0.2">
+    <to>[COMMA-SEPARATED-TO-ADDRESSES]</to>
+    <cc>[COMMA-SEPARATED-CC-ADDRESSES]</cc> 
+    <bcc>[COMMA-SEPARATED-BCC-ADDRESSES]</bcc> 
+    <subject>[SUBJECT]</subject>
+    <body>[BODY]</body>
+<content_type>[CONTENT-TYPE]</content_type> 
+<attachment>[COMMA-SEPARATED-HDFS-FILE-PATHS]</attachment> 
+</email>
+<ok to="kill"/>
+<error to="kill"/>
+</action>
+                   
