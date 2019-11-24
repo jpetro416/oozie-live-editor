@@ -94,10 +94,10 @@ function OozieNode() {
      
      //create a default pathing structure for mermaid js diagrams
      this.setDefaultNodeStructure = function(){
-        this.default_node_structure = this.getNodeID() + " --> " + this.getNextNode();
+        this.default_node_structure = this.getNodeID() + " --> " + this.getNextNode() + " "; //space neeeded
      };
      this.setFirstNodeStructure = function(){
-        this.first_node_structure = "[*] --> " + this.getNodeID();
+        this.first_node_structure = "[*] --> " + this.getNodeID() + " "; //space neeeded
      };
      
  

@@ -19,11 +19,7 @@ var node_list = [];
 var flag_actions = true; 
 var allkeys = true;
 var updated_copy_of_text_area = "";
-docReady(function() {
-
-
-    // DOM is loaded and ready for manipulation
-      
+docReady(function() { // DOM is loaded and ready for manipulation
 
         //----------------------------------------------------
         //init the DAG graph
@@ -228,44 +224,15 @@ docReady(function() {
         
             function updateGraph(node_list){
 
-                //---------------------
-                //Mermaid JS
-                //---------------------
-                var mermaid_diagram = new CreateMermaidDiagram();
-                mermaid_diagram.setDiagram_txt(node_list);
-                
                 //----------------------------------
                 //ReRender Mermaid
                 //---------------------------------- 
-                
-                 var needsUniqueId = "render" + (Math.floor(Math.random() * 10000)).toString(); //should be 10K attempts before repeat user finger stops working before then hopefully
-            //     var callback = function() {
-            //         document.getElementById("mermaid_diagram_id").innerText=mermaid_diagram.getDiagram_txt();
-            //     };
-                var test_txt_try = 
-            "stateDiagram\
-            [*] --> Hey\
-            Hey --> [*]\
-            Hey --> Its\
-            Its --> Bug\
-            Its --> A\
-            Bug --> [*]";
-            //     //.mermaidAPI.render(needsUniqueId, mermaid_diagram.getDiagram_txt(), callback);
-            //     mermaid.mermaidAPI.render(needsUniqueId, test_txt_try, callback);
-            //     try {
-                    
-            // const graphDefinition = 'graph TB\na-->b';
-            // const cb = function(svgGraph){
-            //     console.log(svgGraph);
-            // };
-            // mermaid.mermaidAPI.render(needsUniqueId,graphDefinition,cb);
-            //         //mermaid.render( mermaid_diagram.getDiagram_txt());
-            //     } catch (err) {
-            //         console.error(err);
-            //     }
+                var mermaid_diagram = new CreateMermaidDiagram();
+                mermaid_diagram.setDiagram_txt(node_list);
+                document.getElementById("mermaid_diagram_id").innerText=mermaid_diagram.getDiagram_txt()
+                document.getElementById("mermaid_diagram_id").removeAttribute('data-processed');
+                mermaid.init(undefined, document.getElementById("mermaid_diagram_id"));
 
-                //----------------------------------
-                //----------------------------------
 
 
 
@@ -358,7 +325,7 @@ docReady(function() {
 
             //setters:
             this.setDiagram_txt = function(node_list){
-                node_list = null;
+                //node_list = null;
                 console.log("--------------------------------")
                 var diagram_txt_tmp =  "stateDiagram ";
                 if(node_list!=null){
@@ -383,7 +350,8 @@ docReady(function() {
 
                         diagram_txt_tmp += node_list[id].getDefaultNodeStructure();
                         //console.log("diagram_txt_tmp: " + diagram_txt_tmp);
-                        console.log("Adding link from node: " + node_list[id].getNodeID() +"    Link:| "+ node_list[id].getDefaultNodeStructure());
+                        console.log(node_list[id].getDefaultNodeStructure());
+                        //console.log("Adding link from node: " + node_list[id].getNodeID() +"    Link:| "+ node_list[id].getDefaultNodeStructure());
                     // model.addNodeData( { key: node_list[id].getNodeID(), color: randomDAGColor()} );
                     // model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
                     }
@@ -396,6 +364,7 @@ docReady(function() {
                 console.log("-----Final Mermaid String-------")
                 console.log(diagram_txt_tmp);
                 this.diagram_txt = diagram_txt_tmp;
+                console.log("--------------------------------")
             }else{
 
             //     if(node_bean!=null){
@@ -562,8 +531,8 @@ docReady(function() {
 
 
   <script>
-    mermaid.initialize({
-    //   theme: 'forest',   haaaa noooo! lol
+              mermaid.initialize({
+      // theme: 'forest', //  haaaa noooo! lol
       // themeCSS: '.node rect { fill: red; }',
       logLevel: 3,
       flowchart: { curve: 'basis' },
@@ -600,8 +569,6 @@ docReady(function() {
      </script>
 
 
-
- <!-- new mermaid diagram -->
     </body>
 </body>
 
