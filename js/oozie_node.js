@@ -11,7 +11,10 @@ function OozieNode() {
     this.decision_case_nodes = [];
     this.default_node_structure = null;
     this.first_node_structure;
-     
+    this.error_node_structure = null;
+    
+
+    //getters
      this.getNodeID  = function() {  
            return this.node_id;  
      };
@@ -54,8 +57,14 @@ function OozieNode() {
      this.getFirstNodeStructure = function(){
          return this.first_node_structure;
      };
-     
-      
+     this.getFirstNodeStructure = function(){
+        return this.first_node_structure;
+    };
+    this.getErrorNodeStructure = function(){
+        return this.error_node_structure;
+    } 
+
+    //setters
      this.setNodeID = function(node_id){
          this.node_id = node_id.replace(/\s+/g, '_'); //change spaces to underscores... mermaid doesn't like spaces...;
      };
@@ -76,6 +85,7 @@ function OozieNode() {
 
      this.setErrorNode = function(error_node){
          this.error_node = error_node.replace(/\s+/g, '_');
+         this.setErrorNodeStructure(); //set a new error node structure whenever a next node is set
      };
 
      this.setPrimaryErrorNode = function(primary_error_node){
@@ -99,7 +109,9 @@ function OozieNode() {
      this.setFirstNodeStructure = function(){
         this.first_node_structure = "[*] --> " + this.getNodeID() + " "; //space neeeded
      };
-     
+     this.setErrorNodeStructure = function(){
+         this.error_node_structure = this.getNodeID() + " --> " + this.getErrorNode() + " ";//space needed
+     }
  
      this.printNodeInfo = function(){
          console.log(

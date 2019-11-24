@@ -5,7 +5,6 @@
     <script src="js/codemirror.js"></script>
     <script src="js/xml.js"></script>
     <script src="js/format_code.js"></script>
-    <script src="js/go.js"></script>
     <script src="js/mermaid.js"></script>
     <script src="js/oozie_node.js"></script> 
     <script src="js/create_default_oozie_nodes.js"></script>
@@ -21,24 +20,6 @@ var allkeys = true;
 var updated_copy_of_text_area = "";
 docReady(function() { // DOM is loaded and ready for manipulation
 
-        //----------------------------------------------------
-        //init the DAG graph
-        //----------------------------------------------------
-            var $ = go.GraphObject.make; 
-              myDiagram = $(go.Diagram, "myDiagramDiv",  // create a Diagram for the DIV HTML element
-                {
-                  "undoManager.isEnabled": true  // enable undo & redo
-                });
-             
-              myDiagram.nodeTemplate =  // define a simple Node template
-                $(go.Node, "Auto",  // the Shape will go around the TextBlock
-                  $(go.Shape, "RoundedRectangle", { strokeWidth: 0, fill: "white" },  
-                    new go.Binding("fill", "color")),  // Shape.fill is bound to Node.data.color
-                  $(go.TextBlock,
-                    { margin: 8 },  // some room around the text 
-                    new go.Binding("text", "key")) // TextBlock.text is bound to Node.data.key
-                );
-        
         //----------------------------------------------------
         //Code Mirror
         //----------------------------------------------------
@@ -69,7 +50,7 @@ docReady(function() { // DOM is loaded and ready for manipulation
                   if(event.keyCode == 219 || event.keyCode == 221){
                       // give some visual feadback
                       var toaster = document.getElementById("snackbar");
-                      toaster.textContent = "Avoid using:  {  } [  ] -->    they break the DAG view";
+                      toaster.textContent = "Avoid using:  {  } [  ]  for node names (breaks the DAG)";
                       toaster.className = "show";
                       setTimeout(function(){ toaster.className = toaster.className.replace("show", ""); }, 5000);
                   }
@@ -242,72 +223,6 @@ docReady(function() { // DOM is loaded and ready for manipulation
                 document.getElementById("mermaid_diagram_id").removeAttribute('data-processed');
                 mermaid.init(undefined, document.getElementById("mermaid_diagram_id"));
 
-
-
-
-
-
-                document.getElementById("myDiagramDiv").div = null;
-                myDiagram.div = null;
-                myDiagram = null;
-                go.Diagram.fromDiv = null;
-                myDiagram = $(go.Diagram, "myDiagramDiv",  // create a Diagram for the DIV HTML element
-                {
-                  "undoManager.isEnabled": true  // enable undo & redo
-                });
-                  
-                myDiagram.nodeTemplate =  // define a simple Node template
-                $(go.Node, "Auto",  // the Shape will go around the TextBlock
-                    new go.Binding("location", "loc"),  // get the Node.location from the data.loc value
-                $(go.Shape, "RoundedRectangle", { strokeWidth: 1, fill: "white" },
-                    // Shape.fill is bound to Node.data.color
-                    new go.Binding("fill", "color")),
-                $(go.TextBlock,
-                    { margin: 8, font: "bold 14px sans-serif", stroke: '#333' }, // Specify a margin to add some room around the text
-                    // TextBlock.text is bound to Node.data.key
-                    new go.Binding("text", "key"))
-                );
-                 
-                //create the model data that will be represented by Nodes and Links
-                //tree test:
-                myDiagram.layout = $(go.TreeLayout, { 
-                    angle: 90 ,
-                    // nodeSpacing: 80,
-                    // arrangement: go.TreeLayout.ArrangementFixedRoutes,
-                    // alignment: go.TreeLayout.AlignmentCenterSubtrees,
-                    // layerSpacing: 110
-                });
-
-                var model = new go.GraphLinksModel();
-                //Add normal path data
-                for(let id = 0; id < node_list.length; id++){
-                    if(node_list[id].isPrimaryErrorNode()){ //add error node
-                    model.addNodeData( { key: node_list[id].getNodeID(), color: "red" } );
-                    model.addLinkData( { from: "", to: "" } ); 
-                    }else if(node_list[id].isDecisionNode()){//add decision node
-                    model.addNodeData( { key: node_list[id].getNodeID(), color: randomDAGColor()} );
-                    for(let dn_count = 0; dn_count < node_list[id].getDecisionCaseNodesList().length; dn_count++){ //multi decision node cases
-                        var desc_node = node_list[id].getDecisionCaseNodesList();
-                        model.addLinkData( { from: node_list[id].getNodeID(), to: desc_node[dn_count]} );
-                        //alert("Adding link from: " + node_list[id].getNodeID()+" to: " +desc_node[dn_count]);
-                    }
-                    model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getDecisionDefaultNextNode() } );
-                    }else{//add normal node
-                    if(node_list[id].getNodeID().includes("kill") || node_list[id].getNodeID().includes("fail") ){ //quick and dirty kill and failure node highlight TODO: REAL ID kill/fail node
-                        model.addNodeData( { key: node_list[id].getNodeID(), color: "red"} );
-                        model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
-                    }else{
-                    model.addNodeData( { key: node_list[id].getNodeID(), color: randomDAGColor()} );
-                    model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
-                    }
-                    if(node_list[id].getErrorNode()!=null){ //add normal node error link node
-                    model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getErrorNode() } );  //add error node link
-                    }
-                 }
-                 
-                }
-                //alertOrConsole(model.nodeDataArray,false);
-                myDiagram.model = model;
                 
             }
 
@@ -340,7 +255,7 @@ docReady(function() { // DOM is loaded and ready for manipulation
                 if(node_list!=null){
                 //Add normal path data
                 for(let id = 0; id < node_list.length; id++){
-                    if(node_list[id].isPrimaryErrorNode()){ //add error node
+                    if(node_list[id].isPrimaryErrorNode()){ //add primary error node  TODO: Deprecate?
                     // model.addNodeData( { key: node_list[id].getNodeID(), color: "red" } );
                     // model.addLinkData( { from: "", to: "" } ); 
                     }else if(node_list[id].isDecisionNode()){//add decision node
@@ -365,7 +280,7 @@ docReady(function() { // DOM is loaded and ready for manipulation
                     // model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
                     }
                     if(node_list[id].getErrorNode()!=null){ //add normal node error link node
-                    // model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getErrorNode() } );  //add error node link
+                      diagram_txt_tmp += node_list[id].setErrorNodeStructure();
                     }
                  }
                  
@@ -536,7 +451,6 @@ docReady(function() { // DOM is loaded and ready for manipulation
 
             
                                 
-    <div id="myDiagramDiv" style="width:900px; height:900px;"></div> <!--  Deprecated diagram  border: solid 1px black;-->       
 
 
   <script>
