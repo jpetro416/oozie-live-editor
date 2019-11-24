@@ -65,6 +65,15 @@ docReady(function() { // DOM is loaded and ready for manipulation
 
 
             if (allkeys) {  
+                  //prevent user from blowing up graph
+                  if(event.keyCode == 219 || event.keyCode == 221){
+                      // give some visual feadback
+                      var toaster = document.getElementById("snackbar");
+                      toaster.textContent = "Avoid using:  {  } [  ] -->    they break the DAG view";
+                      toaster.className = "show";
+                      setTimeout(function(){ toaster.className = toaster.className.replace("show", ""); }, 5000);
+                  }
+
                   //reset node list and console output:
                   var node_list = [];
                   consoleCleanup();
