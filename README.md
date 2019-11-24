@@ -1,4 +1,4 @@
-# Ramb0t's Oozie Live Workflow Editor: v1.1.1
+# Ramb0t's Oozie Live Workflow Editor: v1.2
 ## Core Release
 Live oozie workflow editor, real time code DAG updates
 
@@ -11,8 +11,12 @@ http://www.apache.org/licenses/  <br />
 ### Project Libs
 
 This project uses:  <br />
--Go.JS <br />
+-Mermaid.JS <br />
 -CodeMirror
+
+###Being Removed in 1.2.1
+-Go.js
+-oozie-live-editor.html
 
 ### Features:
 
@@ -36,10 +40,4 @@ This project uses:  <br />
 
 
 
-![alt text](https://raw.githubusercontent.com/jpetro416/oozie-live-editor/master/img/oozie-live-editor-v1.1.0.PNG)
-
-![alt text](https://raw.githubusercontent.com/jpetro416/oozie-live-editor/master/img/oozie-live4.png)
-
-![alt text](https://raw.githubusercontent.com/jpetro416/oozie-live-editor/master/img/oozie-live.png)
-
-![alt text](https://raw.githubusercontent.com/jpetro416/oozie-live-editor/master/img/oozie-live2.png)
+![alt text](https://raw.githubusercontent.com/jpetro416/oozie-live-editor/master/img/oozie-live-editor-v1.2.0.PNG)
