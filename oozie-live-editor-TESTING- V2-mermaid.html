@@ -280,7 +280,7 @@ docReady(function() { // DOM is loaded and ready for manipulation
                     // model.addLinkData( { from: node_list[id].getNodeID(), to: node_list[id].getNextNode() } );
                     }
                     if(node_list[id].getErrorNode()!=null){ //add normal node error link node
-                      diagram_txt_tmp += node_list[id].setErrorNodeStructure();
+                      diagram_txt_tmp += node_list[id].getErrorNodeStructure();
                     }
                  }
                  
