@@ -62,7 +62,7 @@
 <content_type>[CONTENT-TYPE]</content_type> 
 <attachment>[COMMA-SEPARATED-HDFS-FILE-PATHS]</attachment> 
 </email>
-<ok to=\"Next_Node\"/>
+<ok to=\"shell_node\"/>
 <error to="fail"/>
 </action>
             `;
@@ -71,7 +71,7 @@
 
         this.setShellNode = function(){ //shell
          var shell =  `
-<action name="shell1">
+<action name="shell_node">
 <shell xmlns="uri:oozie:shell-action:0.1">
   <job-tracker>\${jobTracker}</job-tracker>
   <name-node>\${nameNode}</name-node>
@@ -87,7 +87,7 @@
   <file>\${EXEC}#\${EXEC}</file>
   <!--Copy the executable to compute node's current working directory -->
 </shell>
-<ok to="end" />
+<ok to="hive_node" />
 <error to="fail" />
 </action>
         `;
@@ -97,7 +97,7 @@
         this.setHiveNode = function(){ //hive
          var hive = 
         `
-<action name="myfirsthivejob">
+<action name="hive_node">
 <hive xmlns="uri:oozie:hive-action:0.2">
   <job-tracker>foo:8021</job-tracker>
   <name-node>bar:8020</name-node>
@@ -114,8 +114,8 @@
   <param>InputDir=/home/tucu/input-data</param>
   <param>OutputDir=\${jobOutput}</param>
 </hive>
-<ok to="myotherjob" />
-<error to="errorcleanup" />
+<ok to="pig_node" />
+<error to="fail" />
 </action>
         `;
         this.hive = hive;
@@ -123,7 +123,7 @@
     this.setPigNode = function(){ //pig
          var pig = 
         `
-<action name="myfirstpigjob">
+<action name="pig_node">
 <pig>
   <job-tracker>foo:9001</job-tracker>
   <name-node>bar:9000</name-node>
@@ -146,8 +146,8 @@
   <argument>-param</argument>
   <argument>OUTPUT=\${outputDir}/pig-output3</argument>
 </pig>
-<ok to="myotherjob" />
-<error to="errorcleanup" />
+<ok to="sqoop_node" />
+<error to="fail" />
 </action>
 
         `;
@@ -156,7 +156,7 @@
     this.setSqoopNode = function(){ //sqoop
          var sqoop = 
         `
-<action name="myfirsthivejob">
+<action name="sqoop_node">
 <sqoop xmlns="uri:oozie:sqoop-action:0.2">
   <job-tracker>foo:8021</job-tracker>
   <name-node>bar:8020</name-node>
@@ -171,8 +171,8 @@
   </configuration>
   <command>import  --connect jdbc:hsqldb:file:db.hsqldb --table TT --target-dir hdfs://localhost:8020/user/tucu/foo -m 1</command>
 </sqoop>
-<ok to="myotherjob" />
-<error to="errorcleanup" />
+<ok to="DistCP_Node" />
+<error to="fail" />
 </action>
 
         `;
@@ -181,15 +181,15 @@
     this.setDistcpNode = function(){ //distcp
         var distcp =
         `
-<action name="[DistCP-Node]">
+<action name="DistCP_Node">
 <distcp xmlns="uri:oozie:distcp-action:0.2">
   <job-tracker>\${jobTracker}</job-tracker>
   <name-node>\${nameNode1}</name-node>
   <arg>\${nameNode1}/path/to/input.txt</arg>
   <arg>\${nameNode2}/path/to/output.txt</arg>
 </distcp>
-<ok to="[NODE-NAME]" />
-<error to="[NODE-NAME]" />
+<ok to="decision_node" />
+<error to="fail" />
 </action>
         `;
         this.distcp = distcp;
@@ -216,7 +216,7 @@ this.setEndNode = function(){
     `
 <action name="end">
 <ok to="kill"/>
-<error to="fail_node"/>
+<error to="fail"/>
 </action>
     `;
     this.end_node = end_node;
@@ -226,7 +226,7 @@ this.setKillNode = function(){
     `
 <action name="kill">
 <ok to="kill"/>
-<error to="kill"/>
+<error to="fail"/>
 </action>
     `;
     this.kill_node = kill_node;

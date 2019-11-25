@@ -55,6 +55,7 @@ function OozieNode() {
          return this.default_node_structure;
      };
      this.getFirstNodeStructure = function(){
+         this.setFirstNodeStructure();
          return this.first_node_structure;
      };
      this.getFirstNodeStructure = function(){
@@ -105,9 +106,9 @@ function OozieNode() {
      //create a default pathing structure for mermaid js diagrams
      this.setDefaultNodeStructure = function(){
         this.default_node_structure = this.getNodeID() + " --> " + this.getNextNode() + " "; //space neeeded
-     };
+     }; 
      this.setFirstNodeStructure = function(){
-        this.first_node_structure = "[*] --> " + this.getNodeID() + " "; //space neeeded
+        this.first_node_structure = " [*] --> " + this.getNodeID() + this.getErrorNode() + " ";//space needed
      };
      this.setErrorNodeStructure = function(){
          this.error_node_structure = this.getNodeID() + " --> " + this.getErrorNode() + " ";//space needed

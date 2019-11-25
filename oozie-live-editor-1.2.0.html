@@ -19,7 +19,6 @@ var flag_actions = true;
 var allkeys = true;
 var updated_copy_of_text_area = "";
 docReady(function() { // DOM is loaded and ready for manipulation
-
         //----------------------------------------------------
         //Code Mirror
         //----------------------------------------------------
@@ -40,8 +39,7 @@ docReady(function() { // DOM is loaded and ready for manipulation
             document.body.onkeyup = function(event) {
             event.preventDefault();
             if (allkeys) {  
-                  //prevent user from blowing up graph
-                  if(event.keyCode == 219 || event.keyCode == 221){
+                  if(event.keyCode == 219 || event.keyCode == 221){  //prevent user from blowing up graph
                       // give some visual feadback
                       var toaster = document.getElementById("snackbar");
                       toaster.textContent = "Avoid using:  {  } [  ]  for node names (breaks the DAG)";
@@ -212,26 +210,30 @@ docReady(function() { // DOM is loaded and ready for manipulation
             };
 
             //setters:
-            this.setDiagram_txt = function(node_list){
+            this.setDiagram_txt = function(node_list){ 
                 //node_list = null;
                 console.log("--------------------------------")
-                var diagram_txt_tmp =  "stateDiagram ";
+                var diagram_txt_tmp =  "";
                 if(node_list!=null || node_list[0].getNodeID() == null){
                 //Add normal path data
                 for(let id = 0; id < node_list.length; id++){                
                   if(node_list[id].isDecisionNode()){//add decision node
                     for(let dn_count = 0; dn_count < node_list[id].getDecisionCaseNodesList().length; dn_count++){ //multi decision node cases
                         var desc_node = node_list[id].getDecisionCaseNodesList();
-                        diagram_txt_tmp +=  node_list[id].getNodeID() + " --> " + desc_node[dn_count] + " "; //space neeeded
+                        diagram_txt_tmp +=  node_list[id].getNodeID() + " --> " + desc_node[dn_count] + " "; //space neeeded TODO: move this to oozie bean
                     }
-                    diagram_txt_tmp +=   node_list[id].getNodeID() + " --> " + node_list[id].getDecisionDefaultNextNode().replace(/\s+/g, '_') + " ";
+                    diagram_txt_tmp +=   node_list[id].getNodeID() + " --> " + node_list[id].getDecisionDefaultNextNode().replace(/\s+/g, '_') + " "; //TODO: move this to oozie bean
                     }else{//add normal node
                     if(node_list[id].getNodeID().includes("kill") || node_list[id].getNodeID().includes("fail") ){ //worked on go.js... feature is lacking TODO: kill node colors
                         // model.addNodeData( { key: node_list[id].getNodeID(), color: "red"} );
                     }else{ //pure normal node
-
+                        if(id == 0){ //first
+                          diagram_txt_tmp += "stateDiagram [*] --> " + node_list[id].getNodeID() + " "; // add header TODO: clean this up
+                          diagram_txt_tmp += node_list[id].getDefaultNodeStructure();
+                        }else{
                         diagram_txt_tmp += node_list[id].getDefaultNodeStructure();
-                        console.log(node_list[id].getDefaultNodeStructure());
+                        //console.log(node_list[id].getDefaultNodeStructure());
+                        }
                     }
                     if(node_list[id].getErrorNode()!=null){ //add normal node error link node
                         diagram_txt_tmp += node_list[id].getErrorNodeStructure();
@@ -244,10 +246,8 @@ docReady(function() { // DOM is loaded and ready for manipulation
                 this.diagram_txt = diagram_txt_tmp;
                 console.log("--------------------------------")
             }else{  //on node error... show a funny demo
-
-         
-              console.log("!!!!!!!!!!!!!!-----Node List Empty Mermaid String-------!!!!!!!!!!!!!!!")
-      var diagram_txt_tmp = 
+            console.log("!!!!!!!!!!!!!!-----Node List Empty Mermaid String-------!!!!!!!!!!!!!!!")
+            var diagram_txt_tmp = 
             "stateDiagram\
             [*] --> Hey\
             Hey --> [*]\
@@ -256,8 +256,6 @@ docReady(function() { // DOM is loaded and ready for manipulation
             Its --> A\
             Bug --> [*]";
             this.diagram_txt = diagram_txt_tmp;
-              //  }
-
             }
          };
        }
@@ -313,13 +311,13 @@ docReady(function() { // DOM is loaded and ready for manipulation
       <center>
       <div class="mermaid" id="mermaid_diagram_id">
             stateDiagram
-            [*] --> Node1
-            Node1 --> [*]
-            Node1 --> DecisionNode
-            DecisionNode --> Node1
-            DecisionNode --> Crash
-            DecisionNode --> New
-            Crash --> [*]
+            [*] --> Start
+            Start --> [*]
+            Start --> DecisionNode
+            DecisionNode --> Start
+            DecisionNode --> XML
+            DecisionNode --> Typing
+            XML --> [*]
 
 
 
@@ -343,7 +341,8 @@ docReady(function() { // DOM is loaded and ready for manipulation
       // theme: 'forest', //  haaaa noooo! lol
       // themeCSS: '.node rect { fill: red; }',
       useMaxWidth:false,
-      logLevel: 3,
+      securityLevel: 'loose',
+      logLevel: 1,
       flowchart: { curve: 'basis' },
       gantt: { axisFormat: '%m/%d/%Y' },
       sequence: { actorMargin: 50 },
