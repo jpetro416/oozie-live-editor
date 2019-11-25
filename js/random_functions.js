@@ -183,3 +183,28 @@
             setTimeout(function(){ toaster.className = toaster.className.replace("show", ""); }, 5000);
         
         };
+
+        //---------
+        // When the user scrolls down 20px from the top of the document, show the button
+        window.onscroll = function() {scrollFunction()};
+
+        function scrollFunction() {
+        if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+            document.getElementById("scroll_top_top_btn").style.display = "block";
+        } else {
+            document.getElementById("scroll_top_top_btn").style.display = "none";
+        }
+        }
+
+        function animateToTop(e) {
+            e.preventDefault();
+            var scrollToTop = window.setInterval(function() {
+                var pos = window.pageYOffset;
+                if ( pos > 0 ) {
+                    window.scrollTo( 0, pos - 20 );
+                } else {
+                    window.clearInterval( scrollToTop );
+                }
+            }, 16);
+        }
+        
