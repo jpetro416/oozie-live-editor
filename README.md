@@ -14,8 +14,8 @@ This project uses:  <br />
 -Mermaid.JS <br />
 -CodeMirror
 
-###Being Removed in 1.2.1
--Go.js
+### Being Removed in 1.2.1 <br />
+-Go.js <br />
 -oozie-live-editor.html
 
 ### Features:
