@@ -18,6 +18,7 @@ var node_list = [];
 var flag_actions = true; 
 var allkeys = true;
 var updated_copy_of_text_area = "";
+var absolute_first_node = null;
 docReady(function() { // DOM is loaded and ready for manipulation
         //----------------------------------------------------
         //Code Mirror
@@ -64,6 +65,7 @@ docReady(function() { // DOM is loaded and ready for manipulation
                   var decision_node_fully_initialized = false;
                   var last_error_node = null;
                   var all_error_nodes_foud = [];
+                  
 
                   for(var i = 1;i < arrayOfLines.length;i++){
                     //get lines
@@ -132,6 +134,7 @@ docReady(function() { // DOM is loaded and ready for manipulation
                      //we found the first node
                     if(node_name_parsed.includes("start")){
                         first_node_name = xml.documentElement.getAttribute("to");
+                        absolute_first_node = first_node_name;
                     if(first_node_name){
                       first_time = true;
                       continue;
@@ -218,6 +221,11 @@ docReady(function() { // DOM is loaded and ready for manipulation
                 //Add normal path data
                 for(let id = 0; id < node_list.length; id++){                
                   if(node_list[id].isDecisionNode()){//add decision node
+
+                      if(id==0){
+                        diagram_txt_tmp += "stateDiagram [*] --> " + absolute_first_node + " "; // add header TODO: clean this up
+                      }
+
                     for(let dn_count = 0; dn_count < node_list[id].getDecisionCaseNodesList().length; dn_count++){ //multi decision node cases
                         var desc_node = node_list[id].getDecisionCaseNodesList();
                         diagram_txt_tmp +=  node_list[id].getNodeID() + " --> " + desc_node[dn_count] + " "; //space neeeded TODO: move this to oozie bean
@@ -340,7 +348,7 @@ docReady(function() { // DOM is loaded and ready for manipulation
       // themeCSS: '.node rect { fill: red; }',
       useMaxWidth:false,
       securityLevel: 'loose',
-      logLevel: 1,
+      logLevel: 3,
       flowchart: { curve: 'basis' },
       gantt: { axisFormat: '%m/%d/%Y' },
       sequence: { actorMargin: 50 },
