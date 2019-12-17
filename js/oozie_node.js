@@ -4,7 +4,7 @@ function OozieNode() {
     this.next_node = "";   
     this.first_node = false;  
     this.node_number = 0;
-    this.error_node = null;
+    this.error_node = "";
     this.primary_error_node = false;
     this.decision_node = false;
     this.decision_default_next_node = "";   
@@ -12,6 +12,9 @@ function OozieNode() {
     this.default_node_structure = null;
     this.first_node_structure;
     this.error_node_structure = null;
+    this.error_node_structure_for_error_graph = "";
+    this.default_node_structure_for_error_graph = "";
+
     
 
     //getters
@@ -60,10 +63,25 @@ function OozieNode() {
      };
      this.getFirstNodeStructure = function(){
         return this.first_node_structure;
-    };
+    }; 
     this.getErrorNodeStructure = function(){
         return this.error_node_structure;
     } 
+
+   //-------------------------------------------
+   //Return a default pathing structure for mermaid js diagrams when there is an error in the structure
+   //-------------------------------------------
+    this.getDefaultNodeStructure = function(){
+        return this.default_node_structure;
+    };
+  
+    this.getErrorNodeStructureForErrorGraph = function(){
+        return this.error_node_structure_for_error_graph;
+    };
+
+    this.getDefaultNodeStructureForErrorGraph  = function(){
+        return this.default_node_structure_for_error_graph;
+    };
 
     //setters
      this.setNodeID = function(node_id){
@@ -75,6 +93,7 @@ function OozieNode() {
      this.setNextNode = function(next_node){
          this.next_node = next_node.replace(/\s+/g, '_');
          this.setDefaultNodeStructure(); //set a new node structure whenever a next node is set
+         this.setDefaultNodeStructureForErrorGraph();
      };
      this.setIsFirstNode = function(first_node){
          this.first_node = first_node; 
@@ -87,6 +106,7 @@ function OozieNode() {
      this.setErrorNode = function(error_node){
          this.error_node = error_node.replace(/\s+/g, '_');
          this.setErrorNodeStructure(); //set a new error node structure whenever a next node is set
+         this.setErrorNodeStructureForErrorGraph();
      };
 
      this.setPrimaryErrorNode = function(primary_error_node){
@@ -113,6 +133,26 @@ function OozieNode() {
      this.setErrorNodeStructure = function(){
          this.error_node_structure = this.getNodeID() + " --> " + this.getErrorNode() + " ";//space needed
      }
+   //-------------------------------------------
+   //create a default pathing structure for mermaid js diagrams when there is an error in the structure
+   //-------------------------------------------
+    this.setDefaultNodeStructureForErrorGraph = function(){
+        if(this.getNextNode() !=null && this.getNextNode().includes("end")){
+       this.default_node_structure_for_error_graph = this.getNodeID().replace(/end/g, 'endlabel[end]') + " --> " + this.getNextNode().replace(/end/g, 'endlabel[end] '); //space neeeded
+        }else{
+        this.default_node_structure_for_error_graph = this.getNodeID() + " --> " + this.getNextNode().replace('end', 'endlabel[end] ')//space neeeded
+        }
+    }; 
+
+     this.setErrorNodeStructureForErrorGraph = function(){
+        if(this.getNextNode() !=null && this.getErrorNode().includes("end")){
+        this.error_node_structure_for_error_graph = this.getNodeID() + " --> " + this.getErrorNode() + "label[end]";//space needed
+        }else{
+        this.error_node_structure_for_error_graph = this.getNodeID() + " --> " + this.getErrorNode() + " ";//space needed
+        }
+     
+    };
+
      
  
      this.printNodeInfo = function(){
