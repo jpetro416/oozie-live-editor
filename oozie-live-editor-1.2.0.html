@@ -218,6 +218,11 @@ docReady(function() { // DOM is loaded and ready for manipulation
             this.setDiagram_txt = function(node_list){ 
                 //node_list = null;
                 console.log("--------------------------------")
+
+
+                //--------------------------------------------------
+                //Need to cleanup this section... spaghetti for now 
+                //--------------------------------------------------
                 var diagram_txt_tmp =  "";
                 if(node_list!=null || node_list[0].getNodeID() == null){
                 //Add normal path data
@@ -228,12 +233,25 @@ docReady(function() { // DOM is loaded and ready for manipulation
                           }else if(id == 0 && error_flag == false){
                             diagram_txt_tmp += "stateDiagram [*] --> " + absolute_first_node + " "; // add header TODO: clean this up
                           }
+                          if(error_flag){//is error decision
+                            //----------------------
+                            for(let dn_count = 0; dn_count < node_list[id].getDecisionCaseNodesList().length; dn_count++){ //multi decision node cases
+                              var desc_node = node_list[id].getDecisionCaseNodesList();
+                            diagram_txt_tmp +=  node_list[id].getNodeID() + " --> " + desc_node[dn_count] + "; "; //space neeeded TODO: move this to oozie bean
+                          } 
+                            diagram_txt_tmp +=   node_list[id].getNodeID() + " --> " + node_list[id].getDecisionDefaultNextNode().replace(/\s+/g, '_') + "; "; //TODO: move this to oozie bean
+
+
+                            //----------------------
+                          }else{// not error decision
                           for(let dn_count = 0; dn_count < node_list[id].getDecisionCaseNodesList().length; dn_count++){ //multi decision node cases
                               var desc_node = node_list[id].getDecisionCaseNodesList();
                             diagram_txt_tmp +=  node_list[id].getNodeID() + " --> " + desc_node[dn_count] + " "; //space neeeded TODO: move this to oozie bean
-                          } 
+                              } //end for loop
                             diagram_txt_tmp +=   node_list[id].getNodeID() + " --> " + node_list[id].getDecisionDefaultNextNode().replace(/\s+/g, '_') + " "; //TODO: move this to oozie bean
-                    }else{//add normal node
+                           }//end else not an error decision node
+
+                   }else{//add normal node
                         if(id == 0){ //first
                           if(error_flag){
                             diagram_txt_tmp += "graph TD; "; // add header TODO: clean this up
@@ -247,10 +265,9 @@ docReady(function() { // DOM is loaded and ready for manipulation
                             diagram_txt_tmp += node_list[id].getDefaultNodeStructure();
                            }
                           }
-                        }else{
+                        }else{ //not a first node
                             if(error_flag){
                               diagram_txt_tmp += node_list[id].getDefaultNodeStructureForErrorGraph()+"; ";
-                              //alert(diagram_txt_tmp);
                             }else{
                               diagram_txt_tmp += node_list[id].getDefaultNodeStructure()+"";
                              
