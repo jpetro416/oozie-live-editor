@@ -73,7 +73,7 @@ docReady(function() { // DOM is loaded and ready for manipulation
                     var node_name_parsed = xml.documentElement.nodeName;
                     if(arrayOfLines[i].includes("<html>") || arrayOfLines[i].includes("<body>")){continue;} //skip regular DOM elements
                    // alertOrConsole(node_name_parsed,false);
-                        console.log(arrayOfLines[i]);
+                       // console.log(arrayOfLines[i]);
               
                     //check for decision node
                     if(node_name_parsed.includes("decision")){
@@ -169,7 +169,18 @@ docReady(function() { // DOM is loaded and ready for manipulation
                    }
                   }
                  }
-                 updateGraph(node_list);
+                 try {
+                    updateGraph(node_list, false); //no error
+                  } catch (e) { //stomp error and switch render type
+                    updateGraph(node_list, true); //error
+                     // give some visual feadback
+                      var toaster = document.getElementById("snackbar");
+                      toaster.textContent = "There is an error with your workflow, please check all nodes";
+                      toaster.className = "show";
+                      setTimeout(function(){ toaster.className = toaster.className.replace("show", ""); }, 5000);
+                    console.log(e);
+                  }
+                
             }
             
         }
@@ -179,32 +190,23 @@ docReady(function() { // DOM is loaded and ready for manipulation
                 return new DOMParser().parseFromString(xmlStr, "text/xml");
             } 
         
-            function updateGraph(node_list){
-
+            function updateGraph(node_list, error_flag){
                 //----------------------------------
                 //ReRender Mermaid
                 //---------------------------------- 
-                var mermaid_diagram = new CreateMermaidDiagram();
+                var mermaid_diagram = new CreateMermaidDiagram(error_flag);
                 mermaid_diagram.setDiagram_txt(node_list);
                 document.getElementById("mermaid_diagram_id").innerText=mermaid_diagram.getDiagram_txt()
                 document.getElementById("mermaid_diagram_id").removeAttribute('data-processed');
                 mermaid.init(undefined, document.getElementById("mermaid_diagram_id"));
-
-                
             }
-
         });   
 
-
-
-
-
-        
     
        //-------------------------------------------------------------
        //Mermaid Create Diagram For v1.2
        //-------------------------------------------------------------
-       function CreateMermaidDiagram(){
+       function CreateMermaidDiagram(error_flag){
             this.diagram_txt;
 
             //getters:
@@ -221,30 +223,52 @@ docReady(function() { // DOM is loaded and ready for manipulation
                 //Add normal path data
                 for(let id = 0; id < node_list.length; id++){                
                   if(node_list[id].isDecisionNode()){//add decision node
-
-                      if(id==0){
-                        diagram_txt_tmp += "stateDiagram [*] --> " + absolute_first_node + " "; // add header TODO: clean this up
-                      }
-
-                    for(let dn_count = 0; dn_count < node_list[id].getDecisionCaseNodesList().length; dn_count++){ //multi decision node cases
-                        var desc_node = node_list[id].getDecisionCaseNodesList();
-                        diagram_txt_tmp +=  node_list[id].getNodeID() + " --> " + desc_node[dn_count] + " "; //space neeeded TODO: move this to oozie bean
-                    }
-                    diagram_txt_tmp +=   node_list[id].getNodeID() + " --> " + node_list[id].getDecisionDefaultNextNode().replace(/\s+/g, '_') + " "; //TODO: move this to oozie bean
+                          if(id==0 && error_flag){
+                            diagram_txt_tmp += "graph TD; "; // add header TODO: clean this up
+                          }else if(id == 0 && error_flag == false){
+                            diagram_txt_tmp += "stateDiagram [*] --> " + absolute_first_node + " "; // add header TODO: clean this up
+                          }
+                          for(let dn_count = 0; dn_count < node_list[id].getDecisionCaseNodesList().length; dn_count++){ //multi decision node cases
+                              var desc_node = node_list[id].getDecisionCaseNodesList();
+                            diagram_txt_tmp +=  node_list[id].getNodeID() + " --> " + desc_node[dn_count] + " "; //space neeeded TODO: move this to oozie bean
+                          } 
+                            diagram_txt_tmp +=   node_list[id].getNodeID() + " --> " + node_list[id].getDecisionDefaultNextNode().replace(/\s+/g, '_') + " "; //TODO: move this to oozie bean
                     }else{//add normal node
-                    if(node_list[id].getNodeID().includes("kill") || node_list[id].getNodeID().includes("fail") ){ //worked on go.js... feature is lacking TODO: kill node colors
-                        // model.addNodeData( { key: node_list[id].getNodeID(), color: "red"} );
-                    }else{ //pure normal node
                         if(id == 0){ //first
-                          diagram_txt_tmp += "stateDiagram [*] --> " + node_list[id].getNodeID() + " "; // add header TODO: clean this up
-                          diagram_txt_tmp += node_list[id].getDefaultNodeStructure();
+                          if(error_flag){
+                            diagram_txt_tmp += "graph TD; "; // add header TODO: clean this up
+                            diagram_txt_tmp += node_list[id].getDefaultNodeStructureForErrorGraph()+"; ";
+                          }
+                          if(error_flag==false){
+                            diagram_txt_tmp += "stateDiagram [*] --> " + node_list[id].getNodeID() + " "; // add header TODO: clean this up
+                            if(node_list[id].getDefaultNodeStructure().includes("end")){
+                            diagram_txt_tmp += node_list[id].getDefaultNodeStructure().replace('end', 'endlabel[end] ');
+                           }else{
+                            diagram_txt_tmp += node_list[id].getDefaultNodeStructure();
+                           }
+                          }
                         }else{
-                        diagram_txt_tmp += node_list[id].getDefaultNodeStructure();
-                        //console.log(node_list[id].getDefaultNodeStructure());
+                            if(error_flag){
+                              diagram_txt_tmp += node_list[id].getDefaultNodeStructureForErrorGraph()+"; ";
+                              //alert(diagram_txt_tmp);
+                            }else{
+                              diagram_txt_tmp += node_list[id].getDefaultNodeStructure()+"";
+                             
+                            }
+                           //console.log(node_list[id].getDefaultNodeStructure());
                         }
-                    }
+                    
                     if(node_list[id].getErrorNode()!=null){ //add normal node error link node
-                        diagram_txt_tmp += node_list[id].getErrorNodeStructure();
+                      if(error_flag){
+                        diagram_txt_tmp += node_list[id].getErrorNodeStructureForErrorGraph()+"; ";
+                      }else{
+                        if(node_list[id].getErrorNodeStructure().includes("end")){
+                        diagram_txt_tmp += node_list[id].getErrorNodeStructure().replace('end', 'endlabel[end] ');
+                        }else{
+                        diagram_txt_tmp += node_list[id].getErrorNodeStructure()
+                        }
+                      }
+                      
                     }
                  }
                  
@@ -346,6 +370,7 @@ docReady(function() { // DOM is loaded and ready for manipulation
     mermaid.initialize({
       // theme: 'forest', //  haaaa noooo! lol
       // themeCSS: '.node rect { fill: red; }',
+      themeCSS: ".node rect { fill: red; }",
       useMaxWidth:false,
       securityLevel: 'loose',
       logLevel: 3,
