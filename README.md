@@ -32,8 +32,8 @@ This project uses:  <br />
    &nbsp;&nbsp; -Oozie Doc Link <br />
 
 **TODO:** <br />
--Error node color fix (not based on 'kill' or 'fail') <br />
-
+-Error node color <br />
+-Update Oozie nodes to current HDP/CDP versions
 
 
 ![alt text](https://raw.githubusercontent.com/jpetro416/oozie-live-editor/master/img/oozie-live-editor-v1.2.0.PNG)
