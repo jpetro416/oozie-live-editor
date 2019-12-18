@@ -27,9 +27,9 @@ This project uses:  <br />
    &nbsp;&nbsp; -Shell <br />
    &nbsp;&nbsp; -DistCP <br />
    &nbsp;&nbsp; -Decision <br />
-   &nbsp;&nbsp;-End<br />
-   &nbsp;&nbsp;-Kill<br />
-    &nbsp;&nbsp;-Oozie Doc Link <br />
+   &nbsp;&nbsp; -End<br />
+   &nbsp;&nbsp; -Kill<br />
+   &nbsp;&nbsp; -Oozie Doc Link <br />
 
 **TODO:** <br />
 -Error node color fix (not based on 'kill' or 'fail') <br />
@@ -37,3 +37,7 @@ This project uses:  <br />
 
 
 ![alt text](https://raw.githubusercontent.com/jpetro416/oozie-live-editor/master/img/oozie-live-editor-v1.2.0.PNG)
+**Error Checking:** <br />
+![alt text](https://raw.githubusercontent.com/jpetro416/oozie-live-editor/master/img/error_checking.png)
+**Create Nodes:** <br />
+![alt text](https://raw.githubusercontent.com/jpetro416/oozie-live-editor/master/img/copy_paste_functions.png)
