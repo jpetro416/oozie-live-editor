@@ -137,18 +137,30 @@ function OozieNode() {
    //create a default pathing structure for mermaid js diagrams when there is an error in the structure
    //-------------------------------------------
     this.setDefaultNodeStructureForErrorGraph = function(){
-        if(this.getNextNode() !=null && this.getNextNode().includes("end")){
-       this.default_node_structure_for_error_graph = this.getNodeID().replace(/end/g, 'endlabel[end]') + " --> " + this.getNextNode().replace(/end/g, 'endlabel[end] '); //space neeeded
+        var tmp_string_builder = "";
+        if(this.getNodeID().includes("end")){//current node name includes end
+            tmp_string_builder += this.getNodeID().replace(/end/g, 'endlabel[end]') + " --> ";
+            }else{
+            tmp_string_builder += this.getNodeID() + " --> ";
+            }
+        if(this.getNextNode() !=null && this.getNextNode().includes("end")){ //next node includes end
+            this.default_node_structure_for_error_graph = tmp_string_builder + this.getNextNode().replace(/end/g, 'endlabel[end] '); //space neeeded;
         }else{
-        this.default_node_structure_for_error_graph = this.getNodeID() + " --> " + this.getNextNode().replace('end', 'endlabel[end] ')//space neeeded
+            this.default_node_structure_for_error_graph = tmp_string_builder + this.getNextNode().replace('end', 'endlabel[end] ')//space neeeded
         }
     }; 
 
      this.setErrorNodeStructureForErrorGraph = function(){
+        var tmp_string_builder = "";
+        if(this.getNodeID().includes("end")){//current error node name includes end
+            tmp_string_builder += this.getNodeID().replace(/end/g, 'endlabel[end]') + " --> ";
+            }else{
+            tmp_string_builder += this.getNodeID() + " --> ";
+            }
         if(this.getNextNode() !=null && this.getErrorNode().includes("end")){
-        this.error_node_structure_for_error_graph = this.getNodeID() + " --> " + this.getErrorNode() + "label[end]";//space needed
+        this.error_node_structure_for_error_graph = tmp_string_builder + this.getErrorNode() + "label[end]";//space needed
         }else{
-        this.error_node_structure_for_error_graph = this.getNodeID() + " --> " + this.getErrorNode() + " ";//space needed
+        this.error_node_structure_for_error_graph = tmp_string_builder + this.getErrorNode() + " ";//space needed
         }
      
     };

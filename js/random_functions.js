@@ -51,7 +51,7 @@
 
             //about
             function aboutOLE(){
-                alert("Version: 1.2.0\nSoftware Created by: Joseph Petro");
+                alert("Version: 1.2.3\nSoftware Created by: Joseph Petro");
             }
 
             function docReady(fn) {
