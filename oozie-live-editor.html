@@ -65,6 +65,9 @@ docReady(function() { // DOM is loaded and ready for manipulation
                   var decision_node_fully_initialized = false;
                   var last_error_node = null;
                   var all_error_nodes_foud = [];
+                  var fork_node_fully_initialized = false;
+                  var start_parsing_forks = false;
+                
                   
 
                   for(var i = 1;i < arrayOfLines.length;i++){
@@ -72,9 +75,8 @@ docReady(function() { // DOM is loaded and ready for manipulation
                     var xml = parseXml(arrayOfLines[i]);
                     var node_name_parsed = xml.documentElement.nodeName;
                     if(arrayOfLines[i].includes("<html>") || arrayOfLines[i].includes("<body>")){continue;} //skip regular DOM elements
-                   // alertOrConsole(node_name_parsed,false);
-                       // console.log(arrayOfLines[i]);
-              
+                    //alertOrConsole(node_name_parsed,false);
+                    //console.log(arrayOfLines[i]);
                     //check for decision node
                     if(node_name_parsed.includes("decision")){
                         oozie_node.setDecisionNode(true);
@@ -82,14 +84,40 @@ docReady(function() { // DOM is loaded and ready for manipulation
                     }
 
                     if(oozie_node.isDecisionNode() && decision_node_fully_initialized == false){
-                        //todo: unlimited decision nodes array
-                        if(arrayOfLines[i].includes("case to=")){ //decision 1
+                        if(arrayOfLines[i].includes("case to=")){ //case decision
                             var decision_case = xml.documentElement.getAttribute("to");
-                            oozie_node.setDecisionCaseNodesList(decision_case);
+                            oozie_node.addToDecisionCaseNodesList(decision_case); //adds to list
+                        }
+                        if(arrayOfLines[i].includes("path start=")){ //path decision
+                            var decision_case = xml.documentElement.getAttribute("start");
+                            oozie_node.addToDecisionCaseNodesList(decision_case); //adds to list
                         }
                         if(arrayOfLines[i].includes("default to=")){ //default decision
                             oozie_node.setDecisionDefaultNextNode(xml.documentElement.getAttribute("to"));
                             decision_node_fully_initialized = true;
+                        }
+            
+                    }
+
+                    if(node_name_parsed.includes("fork")){
+                        oozie_node.setForkNode(true);
+                        oozie_node.setNodeID(xml.documentElement.getAttribute("name"));
+                        start_parsing_forks = true;
+                        fork_node_fully_initialized = false;
+                        //alert("fork node found, booleans are:\n fork_node_fully_initialized:" +fork_node_fully_initialized + "\n start_parsing_forks: " + start_parsing_forks);
+                    } 
+
+                    if(oozie_node.isForkNode() && fork_node_fully_initialized == false && start_parsing_forks){
+                        if(arrayOfLines[i].includes("path start=")){ //path decision
+                            var forked_path_to_join = xml.documentElement.getAttribute("start");
+                            oozie_node.addToForkNodesList(forked_path_to_join); //adds to list
+                        //alert("Adding fork to fork node: " + forked_path_to_join);
+                        }
+
+                        if(arrayOfLines[i].includes("join name=")){ //path decision
+                            var forked_path_to_join = xml.documentElement.getAttribute("name");
+                            oozie_node.addToForkNodesList(forked_path_to_join); //adds to list
+                        //alert("Adding fork to fork node: " + forked_path_to_join);
                         }
                     }
 
@@ -142,6 +170,17 @@ docReady(function() { // DOM is loaded and ready for manipulation
                   }
         
                     if(node_name_parsed.includes("action")){  //we found an action node
+                      if(start_parsing_forks){ //get out of fork check, we arn't in a fork anymore
+                        node_list.push(oozie_node);
+                        console.log("Adding new node --------------------------");
+                        oozie_node.printNodeInfo();
+                        oozie_node = new OozieNode(); //zero out for next node
+                        add_node_to_list = false; //reset flag
+                        end_node_found = false; //reset flag
+                        decision_node_fully_initialized = false //reset flag for mutiple decision nodes in a row
+                        start_parsing_forks = false;
+                        fork_node_fully_initialized = true;
+                      }
                     var action_node_name = xml.documentElement.getAttribute("name");
                   
                     if(action_node_name){
@@ -251,6 +290,17 @@ docReady(function() { // DOM is loaded and ready for manipulation
                             diagram_txt_tmp +=   node_list[id].getNodeID() + " --> " + node_list[id].getDecisionDefaultNextNode().replace(/\s+/g, '_') + " "; //TODO: move this to oozie bean
                            }//end else not an error decision node
 
+                   } else if(node_list[id].isForkNode()){ //fork node
+                        if(id==0 && error_flag){
+                            diagram_txt_tmp += "graph TD; "; // add header TODO: clean this up
+                          }else if(id == 0 && error_flag == false){
+                            diagram_txt_tmp += "stateDiagram [*] --> " + absolute_first_node + " "; // add header TODO: clean this up
+                          }
+
+                          for(let fork_count = 0; fork_count < node_list[id].getForkNodeList().length; fork_count++){ //multi decision node cases
+                              var desc_node = node_list[id].getForkNodeList();
+                            diagram_txt_tmp +=  node_list[id].getNodeID() + " --> " + desc_node[fork_count] + " "; //space neeeded TODO: move this to oozie bean
+                              } //end for loop
                    }else{//add normal node
                         if(id == 0){ //first
                           if(error_flag){
