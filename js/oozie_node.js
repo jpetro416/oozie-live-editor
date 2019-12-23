@@ -14,8 +14,8 @@ function OozieNode() {
     this.error_node_structure = null;
     this.error_node_structure_for_error_graph = "";
     this.default_node_structure_for_error_graph = "";
-
-    
+    this.fork_node_list = [];
+    this.fork_node = false;    
 
     //getters
      this.getNodeID  = function() {  
@@ -68,6 +68,13 @@ function OozieNode() {
         return this.error_node_structure;
     } 
 
+    this.isForkNode = function(){
+        return this.fork_node;
+    };
+
+    this.getForkNodeList = function(){
+        return this.fork_node_list;
+    };
    //-------------------------------------------
    //Return a default pathing structure for mermaid js diagrams when there is an error in the structure
    //-------------------------------------------
@@ -119,10 +126,19 @@ function OozieNode() {
      this.setDecisionDefaultNextNode = function(decision_default_next_node){
          this.decision_default_next_node = decision_default_next_node.replace(/\s+/g, '_');
      };
-     this.setDecisionCaseNodesList = function(incoming_case){
+     this.addToDecisionCaseNodesList = function(incoming_case){
          this.decision_case_nodes.push(incoming_case.replace(/\s+/g, '_'));
      };
      
+
+    this.setForkNode = function(fork_node){
+        this.fork_node = fork_node;
+    };
+    this.addToForkNodesList = function(incoming_fork_path){
+        this.fork_node_list.push(incoming_fork_path.replace(/\s+/g, '_'));
+    };
+
+
      //create a default pathing structure for mermaid js diagrams
      this.setDefaultNodeStructure = function(){
         this.default_node_structure = this.getNodeID() + " --> " + this.getNextNode() + " "; //space neeeded
@@ -178,10 +194,15 @@ function OozieNode() {
              "\n isPrimaryErrorNode: " + this.isPrimaryErrorNode(),
              "\n isDecisionNode: " + this.isDecisionNode(),
              "\n getDecisionDefaultNextNode: " + this.getDecisionDefaultNextNode(),
-             "\n getDecisionCaseNodesList: " + this.getDecisionCaseNodesList().length
+             "\n getDecisionCaseNodesList: " + this.getDecisionCaseNodesList().length,
+             "\n isForkNode: " + this.isForkNode(),
+             "\n getForkNodeList: " + this.getForkNodeList().length,
              );
          for(let i=0; i < this.getDecisionCaseNodesList().length; i++){
              console.log("Decision Node #"+i + ": " + this.decision_case_nodes[i]);
          }
+         for(let i=0; i < this.getForkNodeList().length; i++){
+            console.log("Fork Node #"+i + ": " + this.fork_node_list[i]);
+        }
      };
  } //----------------------------------------------------End class OozieNode
